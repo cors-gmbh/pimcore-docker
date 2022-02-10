@@ -2,6 +2,7 @@ stages:
   - build
 
 build_and_push:on-schedule:
+  stage: build
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   services:
