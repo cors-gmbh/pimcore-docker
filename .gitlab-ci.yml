@@ -1,0 +1,35 @@
+stages:
+  - build
+
+variables:
+  TAG: $CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+
+build_and_push:
+  stage: build
+  image: docker:stable
+  services:
+    - docker:dind
+  only:
+    - main
+    - tag
+  parallel:
+    matrix:
+      - PHP_VERSION: [ 7.4, 8.0, 8.1 ]
+      - NGINX: [ 1.21 ]
+  before_script:
+    - docker info
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+  script:
+    - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$PHP_VERSION-$TAG --target=cors_nginx --build-arg PHP_VERSION=$PHP_VERSION
+    - docker build . --tag $CI_REGISTRY_IMAGE/php:$NGINX-$TAG --target=cors_php
+
+    - docker tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
+    - docker tag $CI_REGISTRY_IMAGE/nginx:$NGINX-$TAG $CI_REGISTRY_IMAGE/nginx:$NGINX-LATEST
+
+    - docker push $CI_REGISTRY_IMAGE/php:$TAG
+    - docker push $CI_REGISTRY_IMAGE/php:LATEST
+
+    - docker push $CI_REGISTRY_IMAGE/nginx:$TAG
+    - docker push $CI_REGISTRY_IMAGE/nginx:LATEST
+  tags:
+    - old
