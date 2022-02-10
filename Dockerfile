@@ -5,9 +5,6 @@ ARG NODE_VERSION=14
 FROM pimcore/pimcore:PHP${PHP_VERSION}-fpm AS cors_php
 WORKDIR /var/www/html
 
-ENV APP_ENV=staging
-ARG COMPOSER_AUTH
-
 RUN set -x; \
     apt-get update; \
     apt-get install -y --no-install-recommends libfcgi-bin; \
