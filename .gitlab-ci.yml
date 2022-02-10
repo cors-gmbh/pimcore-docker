@@ -2,7 +2,8 @@ stages:
   - build
 
 variables:
-  TAG: $CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  TAG: $CI_COMMIT_REF_NAME
+  TAG_FULL: $CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 build_and_push:
   stage: build
@@ -11,7 +12,8 @@ build_and_push:
     - docker:dind
   only:
     - main
-    - tag
+    refs:
+      - tags
   parallel:
     matrix:
       - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
@@ -24,12 +26,16 @@ build_and_push:
     - docker build . --tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG --target=cors_php
 
     - docker tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
+    - docker tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG_FULL
     - docker tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
+    - docker tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG_FULL
 
     - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG
+    - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG_FULL
     - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
 
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG
+    - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG_FULL
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
     - old
