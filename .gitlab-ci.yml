@@ -26,10 +26,10 @@ build_and_push:
     - docker tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
     - docker tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
 
-    - docker push $CI_REGISTRY_IMAGE/php:$TAG
-    - docker push $CI_REGISTRY_IMAGE/php:LATEST
+    - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG
+    - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
 
-    - docker push $CI_REGISTRY_IMAGE/nginx:$TAG
-    - docker push $CI_REGISTRY_IMAGE/nginx:LATEST
+    - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG
+    - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
     - old
