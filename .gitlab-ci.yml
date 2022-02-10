@@ -11,8 +11,8 @@ build_and_push:
   services:
     - docker:dind
   only:
-    - main
     refs:
+      - main
       - tags
   parallel:
     matrix:
