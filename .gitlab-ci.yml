@@ -14,8 +14,8 @@ build_and_push:
     - tag
   parallel:
     matrix:
-      - PHP_VERSION: [ 7.4, 8.0, 8.1 ]
-        NGINX: [ 1.21 ]
+      - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+        NGINX: [ '1.21' ]
   before_script:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
