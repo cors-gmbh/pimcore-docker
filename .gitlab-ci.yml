@@ -1,8 +1,26 @@
 stages:
   - build
 
-variables:
-  TAG: $CI_COMMIT_REF_NAME
+build_and_push:on-schedule:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  services:
+  - docker:dind
+  parallel:
+    matrix:
+      -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+          NGINX_VERSION: [ '1.21' ]
+  before_script:
+    - docker info
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+  script:
+    - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg PHP_VERSION=$PHP_VERSION
+    - docker build . --tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST --target=cors_php
+
+    - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
+    - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
+  tags:
+    - old
 
 build_and_push:
   stage: build
@@ -16,6 +34,8 @@ build_and_push:
     matrix:
       - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
         NGINX_VERSION: [ '1.21' ]
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
   before_script:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
