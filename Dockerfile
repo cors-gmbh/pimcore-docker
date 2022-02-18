@@ -13,8 +13,6 @@ RUN set -x; \
     rm -rf /root/.cache; \
     rm -rf /var/lib/apt/lists/*;
 
-VOLUME /var/www/html
-
 COPY php/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 COPY php/docker-install.sh /usr/local/bin/install
 COPY php/docker-wait.sh /usr/local/bin/wait
