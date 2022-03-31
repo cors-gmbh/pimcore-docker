@@ -14,13 +14,9 @@ build_and_push:on-schedule:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - docker pull $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
-    - docker pull $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
-    - docker pull $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
-
     - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
     - docker build . --tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION
-    - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST --target=cors_php_alpine --build-arg PHP_VERSION=$PHP_VERSION
+    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST --target=cors_php_alpine --build-arg PHP_VERSION=$PHP_VERSION
 
     - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
     - docker push $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
@@ -44,13 +40,9 @@ build_and_push:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - docker pull $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
-    - docker pull $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
-    - docker pull $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
-
     - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
     - docker build . --tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION
-    - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-$TAG --target=cors_php_alpine --build-arg PHP_VERSION=$PHP_VERSION
+    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-$TAG --target=cors_php_alpine --build-arg PHP_VERSION=$PHP_VERSION
 
     - docker tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
     - docker tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
