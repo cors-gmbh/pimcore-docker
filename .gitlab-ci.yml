@@ -23,7 +23,7 @@ build_and_push:on-schedule:
     - docker push $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
-    - old
+    - cors
 
 build_and_push:
   stage: build
@@ -55,4 +55,4 @@ build_and_push:
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
-    - old
+    - cors
