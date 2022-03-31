@@ -17,8 +17,10 @@ build_and_push:on-schedule:
   script:
     - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
     - docker build . --tag $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION
+    - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST --target=cors_php_alpine --build-arg PHP_VERSION=$PHP_VERSION
 
     - docker push $CI_REGISTRY_IMAGE/php:$PHP_VERSION-LATEST
+    - docker push $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
     - old
