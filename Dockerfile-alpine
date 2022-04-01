@@ -8,13 +8,21 @@ ENV TIMEZONE Europe/Vienna
 
 RUN apk add --no-cache \
       apk-tools autoconf gcc make g++ automake nasm \
-      imagemagick imagemagick-dev curl tzdata freetype libbsd graphviz openssl \
+      curl tzdata freetype libbsd graphviz openssl \
       ffmpeg html2text ghostscript libreoffice pngcrush jpegoptim \
       exiftool poppler-utils git wget icu-dev oniguruma-dev \
       libx11-dev libwebp libwebp-tools cmake unzip libxml2-dev libxslt-dev \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev; \
+    curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
+    tar xvzf ImageMagick.tar.gz && \
+    cd ImageMagick-* && ./configure && make && make install && /sbin/ldconfig /usr/local/lib && \
+    cd .. && rm -rf ImageMagick.tar.gz ImageMagick-* && \
+    POLICY_XML_LOCATION="$(find /usr/local/etc/ -name 'policy.xml')" && \
+    cp /files/imagemagick-policy.xml $POLICY_XML_LOCATION && \
+    pecl install imagick && \
+    docker-php-ext-enable imagick; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
     docker-php-ext-configure gd -enable-gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
