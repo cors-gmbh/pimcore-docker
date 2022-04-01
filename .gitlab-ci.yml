@@ -4,6 +4,8 @@ stages:
 build_and_push:on-schedule:
   stage: build
   image: docker:stable
+  services:
+    - docker:dind
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   parallel:
@@ -22,11 +24,13 @@ build_and_push:on-schedule:
     - docker push $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
-    - cors
+    - old
 
 build_and_push:
   stage: build
   image: docker:stable
+  services:
+    - docker:dind
   only:
     refs:
       - tags
@@ -57,4 +61,4 @@ build_and_push:
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
-    - cors
+    - old
