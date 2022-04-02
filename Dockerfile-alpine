@@ -16,6 +16,7 @@ RUN apk add --no-cache \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev  \
       opencv opencv-dev py3-pip \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif zopfli; \
+    echo $PATH; \
     pip3 install --upgrade pip setuptools wheel; \
     pip3 install numpy opencv-python; \
     git clone https://gitlab.com/wavexx/facedetect.git; \
