@@ -7,26 +7,35 @@ SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
 ENV TIMEZONE Europe/Vienna
 
 RUN apk add --no-cache \
-      apk-tools autoconf gcc make g++ automake nasm \
-      curl tzdata freetype libbsd graphviz openssl \
+      apk-tools autoconf gcc make g++ automake nasm ninja cmake clang clang-dev python3-dev \
+      curl tzdata freetype libbsd graphviz openssl openblas-dev \
       ffmpeg html2text ghostscript libreoffice pngcrush jpegoptim \
       exiftool poppler-utils git wget icu-dev oniguruma-dev \
       libx11-dev libwebp libwebp-tools cmake unzip libxml2-dev libxslt-dev \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
-      libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev \
-      libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev; \
+      libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev  \
+      opencv opencv-dev py3-pip \
+      libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif zopfli; \
+    pip3 install --upgrade pip setuptools wheel; \
+    pip3 install numpy opencv-python; \
+    git clone https://gitlab.com/wavexx/facedetect.git; \
+    cd facedetect; \
+    cp facedetect /usr/local/bin; \
+    chmod +x /usr/local/bin; \
     curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
-    tar xvzf ImageMagick.tar.gz && \
-    cd ImageMagick-* && ./configure && make && make install && /sbin/ldconfig /usr/local/lib && \
-    cd .. && rm -rf ImageMagick.tar.gz ImageMagick-* && \
-    POLICY_XML_LOCATION="$(find /usr/local/etc/ -name 'policy.xml')" && \
-    cp /files/imagemagick-policy.xml $POLICY_XML_LOCATION && \
-    pecl install imagick && \
+      tar xvzf ImageMagick.tar.gz && \
+      cd ImageMagick-*; \
+      ./configure --with-lcms2=yes;  \
+      make --jobs=$(nproc);  \
+      make install; \
+      /sbin/ldconfig /usr/local/lib; \
+      cd ..;  \
+      rm -rf ImageMagick.tar.gz ImageMagick-*; \
+    pecl install imagick; \
     docker-php-ext-enable imagick; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
     docker-php-ext-configure gd -enable-gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
-    pecl install imagick; \
     pecl install apcu; \
     pecl install redis; \
     docker-php-ext-enable redis imagick apcu; \
@@ -35,7 +44,7 @@ RUN apk add --no-cache \
     docker-php-ext-enable imap; \
     cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime; \
     echo "${TIMEZONE}" > /etc/timezone; \
-    apk del tzdata; \
+    apk del tzdata apk-tools autoconf gcc make g++ automake nasm ninja cmake clang clang-dev; \
     rm -rf /var/cache/apk/*;
 
 COPY --from=madnight/alpine-wkhtmltopdf-builder:0.12.5-alpine3.10 \
