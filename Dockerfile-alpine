@@ -19,7 +19,7 @@ RUN apk add --no-cache \
     curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
       tar xvzf ImageMagick.tar.gz && \
       cd ImageMagick-*; \
-      ./configure --with-lcms2=yes --with-heic=yes --with-avif=yes;  \
+      ./configure --with-lcms=yes --with-heic=yes;  \
       make --jobs=$(nproc);  \
       make install; \
       /sbin/ldconfig /usr/local/lib; \
