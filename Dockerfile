@@ -9,7 +9,7 @@ COPY nginx/nginx-default.conf /etc/nginx/conf.d/
 
 WORKDIR /var/www/html
 
-FROM php:${PHP_VERSION}-${BUILD_TYPE}-alpine AS cors_php
+FROM php:${PHP_VERSION}-${BUILD_TYPE}-alpine as cors_php
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
@@ -78,12 +78,3 @@ RUN chmod +x /usr/local/bin/health
 
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
-
-FROM cors_php AS cors_supervisord
-
-RUN apk update && apk add --no-cache supervisor
-
-COPY supervisord/supervisord.conf /etc/supervisor/supervisord.conf
-COPY supervisord/pimcore.conf /etc/supervisor/conf.d/pimcore.conf
-
-CMD ["/usr/bin/supervisord"]
