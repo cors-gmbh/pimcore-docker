@@ -28,6 +28,7 @@ variables:
 
 build_alpine:on-schedule:
   stage: build
+  image: docker:stable
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   parallel:
@@ -87,6 +88,7 @@ build_alpine:on-schedule:
 
 build_alpine:
   stage: build
+  image: docker:stable
   only:
     refs:
       - tags
