@@ -39,9 +39,9 @@ build_alpine:on-schedule:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION
-    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
-    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST --target=cors_supervisord --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
+    - docker build -f Dockerfile-alpine . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION
+    - docker build -f Dockerfile-alpine . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
+    - docker build -f Dockerfile-alpine . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST --target=cors_supervisord --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
 
     - docker push $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
     - docker push $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
@@ -103,10 +103,10 @@ build_alpine:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
-    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-$TAG --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="fpm"
-    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-$TAG --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
-    - docker build -f Dockerfile-alpine . --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-$TAG --target=cors_supervisor --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
+    - docker build -f Dockerfile-alpine . --rm=false --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
+    - docker build -f Dockerfile-alpine . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-$TAG --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="fpm"
+    - docker build -f Dockerfile-alpine . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-$TAG --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
+    - docker build -f Dockerfile-alpine . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-$TAG --target=cors_supervisor --build-arg PHP_VERSION=$PHP_VERSION --build-arg BUILD_TYPE="cli"
 
     - docker tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
     - docker tag $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
