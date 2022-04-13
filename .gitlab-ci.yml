@@ -1,6 +1,8 @@
 stages:
   - build
 
+variables:
+  DOCKER_BUILDKIT: 1
 #build_debian:on-schedule:
 #  stage: build
 #  image: docker:stable
