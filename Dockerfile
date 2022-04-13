@@ -3,6 +3,12 @@ ARG BUILD_TYPE="fpm"
 
 ARG NGINX_VERSION=1.21
 
+FROM nginx:${NGINX_VERSION}-alpine AS cors_nginx
+
+COPY nginx/nginx-default.conf /etc/nginx/conf.d/
+
+WORKDIR /var/www/html
+
 FROM php:${PHP_VERSION}-${BUILD_TYPE}-alpine AS cors_php
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
@@ -81,10 +87,3 @@ COPY supervisord/supervisord.conf /etc/supervisor/supervisord.conf
 COPY supervisord/pimcore.conf /etc/supervisor/conf.d/pimcore.conf
 
 CMD ["/usr/bin/supervisord"]
-
-
-FROM nginx:${NGINX_VERSION}-alpine AS cors_nginx
-
-COPY nginx/nginx-default.conf /etc/nginx/conf.d/
-
-WORKDIR /var/www/html
