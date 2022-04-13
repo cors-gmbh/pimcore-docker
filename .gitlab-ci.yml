@@ -28,9 +28,6 @@ variables:
 
 build_alpine:on-schedule:
   stage: build
-  image: docker:stable
-  services:
-    - docker:dind
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   parallel:
@@ -51,7 +48,7 @@ build_alpine:on-schedule:
     - docker push $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
-    - old
+    - cors
 
 #build_debian:
 #  stage: build
@@ -90,9 +87,6 @@ build_alpine:on-schedule:
 
 build_alpine:
   stage: build
-  image: docker:stable
-  services:
-    - docker:dind
   only:
     refs:
       - tags
@@ -128,4 +122,4 @@ build_alpine:
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
-    - old
+    - cors
