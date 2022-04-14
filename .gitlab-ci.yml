@@ -21,7 +21,7 @@ build_alpine:on-schedule:
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - if [ $TARGET == "fpm" ]; then DOCKER_TAG=""; else DOCKER_TAG=-$TARGET; fi
+    - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; else DOCKER_TAG=-$PHP_TYPE; fi
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
 
     - docker build . --rm=false --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE
@@ -83,7 +83,7 @@ build_alpine:
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - if [ $TARGET == "fpm" ]; then DOCKER_TAG=""; else DOCKER_TAG=-$TARGET; fi
+    - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; else DOCKER_TAG=-$PHP_TYPE; fi
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
 
     - docker build . --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE
