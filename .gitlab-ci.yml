@@ -51,6 +51,9 @@ build_nginx:on-schedule:
 build_nginx:
   stage: build
   image: docker:stable
+  only:
+    refs:
+      - tags
   parallel:
     matrix:
         - NGINX_VERSION: [ '1.21' ]
