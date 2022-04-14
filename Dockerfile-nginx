@@ -1,0 +1,7 @@
+ARG NGINX_VERSION=1.21
+
+FROM nginx:${NGINX_VERSION}-alpine AS cors_nginx
+
+COPY nginx/nginx-default.conf /etc/nginx/conf.d/
+
+WORKDIR /var/www/html

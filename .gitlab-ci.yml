@@ -12,22 +12,42 @@ build_alpine:on-schedule:
   parallel:
     matrix:
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-          NGINX_VERSION: [ '1.21' ]
+          TARGET: ['php']
+          PHP_TYPE: ['fpm', 'cli']
+      -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+          TARGET: ['supervisord']
+          PHP_TYPE: ['cli']
+
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+  script:
+    - if [ $TARGET == "fpm" ]; then TAG=""; else TAG=-$TARGET; fi
+    
+    - docker build . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine$TAG:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE
+
+    - docker push $CI_REGISTRY_IMAGE/php-alpine-$TARGET:$PHP_VERSION-LATEST
+  tags:
+    - cors
+
+build_nginx:on-schedule:
+  stage: build
+  image: docker:stable
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  parallel:
+    matrix:
+        - NGINX_VERSION: [ '1.21' ]
   before_script:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - docker build . --rm=false --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
-    - docker build . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION
-    - docker build . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST --target=cors_php --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE="cli"
-    - docker build . --rm=false --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST --target=cors_supervisord --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE="cli"
-
-    - docker push $CI_REGISTRY_IMAGE/php-alpine:$PHP_VERSION-LATEST
-    - docker push $CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
-    - docker push $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
+    - docker build -f Dockerfile-nginx . --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
     - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
   tags:
     - cors
+
+
+
 
 build_alpine:
   stage: build
