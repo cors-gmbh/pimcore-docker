@@ -1,5 +1,5 @@
-ARG BUILD_TYPE="8.0-fpm"
-
+ARG PHP_VERSION="8.0"
+ARG PHP_TYPE="fpm"
 ARG NGINX_VERSION=1.21
 
 FROM nginx:${NGINX_VERSION}-alpine AS cors_nginx
@@ -8,7 +8,7 @@ COPY nginx/nginx-default.conf /etc/nginx/conf.d/
 
 WORKDIR /var/www/html
 
-FROM php:${BUILD_TYPE}-alpine as cors_php
+FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine as cors_php
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
