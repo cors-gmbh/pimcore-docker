@@ -91,7 +91,7 @@ build_alpine:
     - if [ $TARGET == "supervisord" ]; then DOCKER_TAG="-supervisord"; else DOCKER_TAG=-$TARGET; fi
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
 
-    - docker build . --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE
+    - docker build . --tag $IMAGE_NAME:$PHP_VERSION-$TAG --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE
     - docker tag $IMAGE_NAME:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG:$PHP_VERSION-LATEST
 
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
