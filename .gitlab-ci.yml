@@ -25,6 +25,7 @@ build_alpine:on-schedule:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
     - wget -O /usr/bin/docker-buildx https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.${BUILDX_ARCH}
     - chmod +x /usr/bin/docker-buildx
+    - docker buildx ls
   script:
     - DOCKER_TAG=-$PHP_TYPE;
     - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
