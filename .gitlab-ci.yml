@@ -3,6 +3,9 @@ stages:
 
 variables:
   DOCKER_BUILDKIT: 1
+  DOCKER_DRIVER: overlay2
+  BUILDX_VERSION: "v0.6.1"
+  BUILDX_ARCH: "linux-amd64"
 
 build_alpine:on-schedule:
   stage: build
