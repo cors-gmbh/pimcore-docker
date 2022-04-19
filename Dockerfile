@@ -26,7 +26,8 @@ RUN apk add --no-cache \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli;
 
 RUN wget 'http://www.imagemagick.org/download/ImageMagick.tar.gz'; \
-      tar xvzf ImageMagick.tar.gz; \
+      gunzip ImageMagick.tar.gz; \
+      tar xf ImageMagick.tar; \
       cd ImageMagick-*; \
       pwd; \
       ./configure --with-lcms=yes --with-heic=yes;  \
