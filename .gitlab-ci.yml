@@ -20,6 +20,8 @@ build_alpine:on-schedule:
 
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+    - wget -O /usr/bin/docker-buildx https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.${BUILDX_ARCH}
+    - chmod +x /usr/bin/docker-buildx
   script:
     - DOCKER_TAG=-$PHP_TYPE;
     - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
@@ -30,9 +32,8 @@ build_alpine:on-schedule:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
     - echo $IMAGE_NAME
 
-    - docker build . --rm=false --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE
-
-    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
+    - docker-buildx create --use
+    - docker buildx build . --rm=false --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push
   tags:
     - cors
 
