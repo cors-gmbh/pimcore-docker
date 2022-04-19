@@ -6,11 +6,24 @@ variables:
   DOCKER_DRIVER: overlay2
   CI_BUILDX_ARCHS: "linux/amd64,linux/arm64"
 
-build_alpine:on-schedule:
+.buildx:
   stage: build
   image: registry.gitlab.com/ericvh/docker-buildx-qemu
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+    - update-binfmts --enable
+    - docker buildx create --driver docker-container --use
+    - docker buildx inspect --bootstrap
+    - docker buildx ls
+  tags:
+    - cors
+
+.buildx:on-schedule:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
+
+build_alpine:on-schedule:
+  extends: .buildx:on-schedule
   parallel:
     matrix:
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
@@ -19,44 +32,22 @@ build_alpine:on-schedule:
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
           TARGET: ['supervisord', 'supervisord_debug']
           PHP_TYPE: ['cli']
-
-  before_script:
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-    - update-binfmts --enable # Important: Ensures execution of other binary formats is enabled in the kernel
-    - docker buildx create --driver docker-container --use
-    - docker buildx inspect --bootstrap
-    - docker buildx ls
   script:
     - DOCKER_TAG=-$PHP_TYPE;
     - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
     - if [ $TARGET == "supervisord" ]; then DOCKER_TAG="-supervisord"; fi
     - if [ $TARGET == "supervisord_debug" ]; then DOCKER_TAG="-supervisord-debug"; fi
     - if [ $TARGET == "debug" ]; then DOCKER_TAG="-$PHP_TYPE-debug"; fi
-
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
-    - echo $IMAGE_NAME
-
     - docker buildx build --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
-  tags:
-    - cors
 
 build_nginx:on-schedule:
-  stage: build
-  image: docker:stable
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+  extends: .buildx:on-schedule
   parallel:
     matrix:
         - NGINX_VERSION: [ '1.21' ]
-  before_script:
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-    - wget -O /usr/bin/docker-buildx https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.${BUILDX_ARCH}
-    - chmod +x /usr/bin/docker-buildx
   script:
-    - docker-buildx create --use
-    - docker-buildx build -f Dockerfile-nginx --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION --push --platform linux/arm64/v8 .
-  tags:
-    - cors
+    - docker buildx build -f Dockerfile-nginx --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION --push --platform linux/arm64/v8 .
 
 build_nginx:
   stage: build
