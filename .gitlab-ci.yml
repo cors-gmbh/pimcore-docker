@@ -4,12 +4,11 @@ stages:
 variables:
   DOCKER_BUILDKIT: 1
   DOCKER_DRIVER: overlay2
-  BUILDX_VERSION: "v0.6.1"
-  BUILDX_ARCH: "linux-amd64"
+  CI_BUILDX_ARCHS: "linux/amd64,linux/arm64"
 
 build_alpine:on-schedule:
   stage: build
-  image: docker:stable
+  image: registry.gitlab.com/ericvh/docker-buildx-qemu
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
   parallel:
@@ -23,9 +22,10 @@ build_alpine:on-schedule:
 
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-    - wget -O /usr/bin/docker-buildx https://github.com/docker/buildx/releases/download/${BUILDX_VERSION}/buildx-${BUILDX_VERSION}.${BUILDX_ARCH}
-    - chmod +x /usr/bin/docker-buildx
-    - docker-buildx ls
+    - update-binfmts --enable # Important: Ensures execution of other binary formats is enabled in the kernel
+    - docker buildx create --driver docker-container --use
+    - docker buildx inspect --bootstrap
+    - docker buildx ls
   script:
     - DOCKER_TAG=-$PHP_TYPE;
     - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
@@ -37,7 +37,7 @@ build_alpine:on-schedule:
     - echo $IMAGE_NAME
 
     - docker-buildx create --use
-    - docker-buildx build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform linux/arm64/v8 .
+    - docker-buildx build --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
   tags:
     - cors
 
