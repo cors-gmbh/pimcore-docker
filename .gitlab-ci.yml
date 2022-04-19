@@ -18,12 +18,13 @@ variables:
   tags:
     - cors
 
-.buildx:on-schedule:
+.buildx_on_schedule:
+  extends: .buildx
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
 build_alpine:on-schedule:
-  extends: .buildx:on-schedule
+  extends: .buildx_on_schedule
   parallel:
     matrix:
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
@@ -42,12 +43,12 @@ build_alpine:on-schedule:
     - docker buildx build --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
 
 build_nginx:on-schedule:
-  extends: .buildx:on-schedule
+  extends: .buildx_on_schedule
   parallel:
     matrix:
         - NGINX_VERSION: [ '1.21' ]
   script:
-    - docker buildx build -f Dockerfile-nginx --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION --push --platform linux/arm64/v8 .
+    - docker buildx build --pull -f Dockerfile-nginx --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION --push --platform linux/arm64/v8 .
 
 build_nginx:
   stage: build
