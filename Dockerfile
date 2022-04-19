@@ -24,9 +24,11 @@ RUN apk add --no-cache \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev  \
       opencv opencv-dev py3-pip fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli; \
-    curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
-      tar xvzf ImageMagick.tar.gz && \
+
+RUN curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz; \
+      tar xvzf ImageMagick.tar.gz; \
       cd ImageMagick-*; \
+      pwd; \
       ./configure --with-lcms=yes --with-heic=yes;  \
       make --jobs=$(nproc);  \
       make install; \
