@@ -36,7 +36,7 @@ build_alpine:on-schedule:
     - echo $IMAGE_NAME
 
     - docker-buildx create --use
-    - docker-buildx build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform linux/amd64,linux/arm64/v8 .
+    - docker-buildx build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform linux/arm64/v8 .
   tags:
     - cors
 
@@ -54,7 +54,7 @@ build_nginx:on-schedule:
     - chmod +x /usr/bin/docker-buildx
   script:
     - docker-buildx create --use
-    - docker-buildx build -f Dockerfile-nginx --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION --push --platform linux/amd64,linux/arm64/v8 .
+    - docker-buildx build -f Dockerfile-nginx --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION --push --platform linux/arm64/v8 .
   tags:
     - cors
 
