@@ -36,8 +36,7 @@ build_alpine:on-schedule:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
     - echo $IMAGE_NAME
 
-    - docker-buildx create --use
-    - docker-buildx build --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
+    - docker buildx build --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
   tags:
     - cors
 
