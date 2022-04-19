@@ -12,14 +12,11 @@ build_alpine:on-schedule:
   parallel:
     matrix:
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-          TARGET: ['php']
+          TARGET: ['php', 'debug']
           PHP_TYPE: ['fpm', 'cli']
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
           TARGET: ['supervisord']
           PHP_TYPE: ['cli']
-      -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-          TARGET: ['debug']
-          PHP_TYPE: ['fpm', 'cli']
 
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
@@ -27,7 +24,7 @@ build_alpine:on-schedule:
     - DOCKER_TAG=-$PHP_TYPE;
     - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
     - if [ $TARGET == "supervisord" ]; then DOCKER_TAG="-supervisord"; fi
-    - if [ $TARGET == "debug" ]; then DOCKER_TAG="-debug"; fi
+    - if [ $TARGET == "debug" ]; then DOCKER_TAG="$PHP_TYPE-debug"; fi
 
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
     - echo $IMAGE_NAME
@@ -84,14 +81,11 @@ build_alpine:
   parallel:
     matrix:
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-          TARGET: ['php']
+          TARGET: ['php', 'debug']
           PHP_TYPE: ['fpm', 'cli']
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
           TARGET: ['supervisord']
           PHP_TYPE: ['cli']
-      -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-          TARGET: ['debug']
-          PHP_TYPE: ['fpm', 'cli']
   variables:
     TAG: $CI_COMMIT_REF_NAME
   before_script:
@@ -100,7 +94,7 @@ build_alpine:
     - DOCKER_TAG=-$PHP_TYPE;
     - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
     - if [ $TARGET == "supervisord" ]; then DOCKER_TAG="-supervisord"; fi
-    - if [ $TARGET == "debug" ]; then DOCKER_TAG="-debug"; fi
+    - if [ $TARGET == "debug" ]; then DOCKER_TAG="$PHP_TYPE-debug"; fi
 
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
     - echo $IMAGE_NAME
