@@ -25,7 +25,7 @@ RUN apk add --no-cache \
       opencv opencv-dev py3-pip fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli;
 
-RUN curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz; \
+RUN wget 'http://www.imagemagick.org/download/ImageMagick.tar.gz'; \
       tar xvzf ImageMagick.tar.gz; \
       cd ImageMagick-*; \
       pwd; \
