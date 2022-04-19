@@ -88,7 +88,7 @@ COPY supervisord/pimcore.conf /etc/supervisor/conf.d/pimcore.conf
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 
 
-FROM cors_php AS cors_php_debug
+FROM cors_php AS cors_debug
 
 USER root
 
