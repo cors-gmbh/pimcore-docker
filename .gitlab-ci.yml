@@ -76,7 +76,7 @@ variables:
           TARGET: ['php']
           PHP_TYPE: ['fpm', 'cli']
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE
     - docker buildx build --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
 
 build_php:
