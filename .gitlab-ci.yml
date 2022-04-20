@@ -36,15 +36,15 @@ variables:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG:$PHP_VERSION-LATEST
     - IMAGE_NAME=$FROM_IMAGE_NAME-debug
 
-    - docker buildx build -f Dockerfile-debug \ 
-        --pull \ 
-        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \ 
-        --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max \ 
+    - docker buildx build -f Dockerfile-debug \
+        --pull \
+        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \
+        --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max \
         --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
         --target=cors_$TARGET \
-        --build-arg FROM=$FROM_IMAGE_NAME \ 
-        --build-arg PHP_VERSION=$PHP_VERSION \ 
-        --push \ 
+        --build-arg FROM=$FROM_IMAGE_NAME \
+        --build-arg PHP_VERSION=$PHP_VERSION \
+        --push \
         --platform $CI_BUILDX_ARCHS .
 
 .buildx_supervisord:
@@ -60,15 +60,15 @@ variables:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli
     - IMAGE_NAME=$FROM_IMAGE_NAME-debug
 
-    - docker buildx build -f Dockerfile-supervisord \ 
-        --pull \ 
-        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \ 
+    - docker buildx build -f Dockerfile-supervisord \
+        --pull \
+        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \
         --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max \
-        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \ 
-        --target=cors_$TARGET \ 
-        --build-arg FROM=$FROM_IMAGE_NAME \ 
-        --build-arg PHP_VERSION=$PHP_VERSION \ 
-        --push \ 
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
+        --target=cors_$TARGET \
+        --build-arg FROM=$FROM_IMAGE_NAME \
+        --build-arg PHP_VERSION=$PHP_VERSION \
+        --push \
         --platform $CI_BUILDX_ARCHS .
 
 .buildx_supervisord_debug:
@@ -84,14 +84,14 @@ variables:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli-debug
     - IMAGE_NAME=$FROM_IMAGE_NAME-debug
 
-    - docker buildx build -f Dockerfile-supervisord \ 
-        --pull \ 
-        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \ 
-        --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max \ 
-        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \ 
-        --target=cors_$TARGET \ 
-        --build-arg FROM=$FROM_IMAGE_NAME \ 
-        --build-arg PHP_VERSION=$PHP_VERSION \ 
+    - docker buildx build -f Dockerfile-supervisord \
+        --pull \
+        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \
+        --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max \
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
+        --target=cors_$TARGET \
+        --build-arg FROM=$FROM_IMAGE_NAME \
+        --build-arg PHP_VERSION=$PHP_VERSION \
         --push \
         --platform $CI_BUILDX_ARCHS .
 
@@ -103,21 +103,16 @@ variables:
           TARGET: ['php']
           PHP_TYPE: ['fpm', 'cli']
   script:
-    - DOCKER_TAG=-$PHP_TYPE;
-    - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
-    - if [ $TARGET == "supervisord" ]; then DOCKER_TAG="-supervisord"; fi
-    - if [ $TARGET == "supervisord_debug" ]; then DOCKER_TAG="-supervisord-debug"; fi
-    - if [ $TARGET == "debug" ]; then DOCKER_TAG="-$PHP_TYPE-debug"; fi
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
-    - docker buildx build \ 
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine
+    - docker buildx build \
         --pull \
-        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \ 
-        --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max \ 
-        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \ 
-        --target=cors_$TARGET \ 
-        --build-arg PHP_VERSION=$PHP_VERSION \ 
-        --build-arg PHP_TYPE=$PHP_TYPE \ 
-        --push \ 
+        --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache \
+        --cache-to   type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max \
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
+        --target=cors_$TARGET \
+        --build-arg PHP_VERSION=$PHP_VERSION \
+        --build-arg PHP_TYPE=$PHP_TYPE \
+        --push \
         --platform $CI_BUILDX_ARCHS .
 
 build_php:
