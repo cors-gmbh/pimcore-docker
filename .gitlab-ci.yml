@@ -39,7 +39,7 @@ variables:
     - docker buildx build -f Dockerfile-debug \ 
         --pull \ 
         --cache-from $IMAGE_NAME:$PHP_VERSION-cache \ 
-        --cache-to $IMAGE_NAME:$PHP_VERSION-cache \ 
+        --cache-to $IMAGE_NAME:$PHP_VERSION-cache,mode=max \ 
         --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
         --target=cors_$TARGET \
         --build-arg FROM=$FROM_IMAGE_NAME \ 
@@ -63,7 +63,7 @@ variables:
     - docker buildx build -f Dockerfile-supervisord \ 
         --pull \ 
         --cache-from $IMAGE_NAME:$PHP_VERSION-cache \ 
-        --cache-to $IMAGE_NAME:$PHP_VERSION-cache \
+        --cache-to $IMAGE_NAME:$PHP_VERSION-cache,mode=max \
         --tag $IMAGE_NAME:$PHP_VERSION-LATEST \ 
         --target=cors_$TARGET \ 
         --build-arg FROM=$FROM_IMAGE_NAME \ 
@@ -87,7 +87,7 @@ variables:
     - docker buildx build -f Dockerfile-supervisord \ 
         --pull \ 
         --cache-from $IMAGE_NAME:$PHP_VERSION-cache \ 
-        --cache-to $IMAGE_NAME:$PHP_VERSION-cache \ 
+        --cache-to $IMAGE_NAME:$PHP_VERSION-cache,mode=max \ 
         --tag $IMAGE_NAME:$PHP_VERSION-LATEST \ 
         --target=cors_$TARGET \ 
         --build-arg FROM=$FROM_IMAGE_NAME \ 
@@ -112,7 +112,7 @@ variables:
     - docker buildx build \ 
         --pull \
         --cache-from $IMAGE_NAME:$PHP_VERSION-cache \ 
-        --cache-to $IMAGE_NAME:$PHP_VERSION-cache \ 
+        --cache-to $IMAGE_NAME:$PHP_VERSION-cache,mode=max \ 
         --tag $IMAGE_NAME:$PHP_VERSION-LATEST \ 
         --target=cors_$TARGET \ 
         --build-arg PHP_VERSION=$PHP_VERSION \ 
