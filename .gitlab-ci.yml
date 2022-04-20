@@ -91,6 +91,7 @@ build_supervisord_debug:
     - build_supervisord
 
 build_nginx:
+  extends: .buildx
   stage: build_nginx
   parallel:
     matrix:
@@ -98,8 +99,6 @@ build_nginx:
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
     - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --push --platform $CI_BUILDX_ARCHS .
-  tags:
-    - cors
 
 #build_nginx:
 #  stage: build
