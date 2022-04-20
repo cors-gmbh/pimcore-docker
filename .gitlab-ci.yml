@@ -31,8 +31,6 @@ variables:
       - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-  variables:
-    TAG: $CI_COMMIT_REF_NAME
   script:
     - DOCKER_TAG=-$PHP_TYPE;
     - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
@@ -63,11 +61,11 @@ variables:
     matrix:
       - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
         PHP_TYPE: [ 'cli' ]
-        TARGET: [ 'supervisord_.debug' ]
+        TARGET: [ 'supervisord_debug' ]
   script:
     - if [ $TARGET == "supervisord_debug" ]; then DOCKER_TAG="-supervisord-debug"; fi
 
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli-debug
     - IMAGE_NAME=$FROM_IMAGE_NAME-debug
 
     - docker buildx build -f Dockerfile-supervisord --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
