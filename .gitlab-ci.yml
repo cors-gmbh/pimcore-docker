@@ -8,7 +8,7 @@ stages:
 variables:
   DOCKER_BUILDKIT: 1
   DOCKER_DRIVER: overlay2
-  CI_BUILDX_ARCHS: "linux/amd64"
+  CI_BUILDX_ARCHS: "linux/amd64,linux/arm64"
 
 .buildx:
   stage: build_php
