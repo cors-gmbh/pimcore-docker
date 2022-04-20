@@ -1,6 +1,6 @@
 ARG FROM
 
-FROM ${FROM} AS cors_debug
+FROM ${FROM}
 
 RUN apk add --no-cache \
       apk-tools autoconf gcc make g++ automake nasm ninja cmake clang clang-dev; \

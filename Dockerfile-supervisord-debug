@@ -1,6 +1,6 @@
 ARG FROM
 
-FROM ${FROM} AS cors_supervisord_debug
+FROM ${FROM}
 
 RUN apk update && apk add --no-cache supervisor
 
