@@ -1,0 +1,9 @@
+ARG FROM
+
+FROM ${FROM} AS cors_supervisord_debug
+
+RUN apk update && apk add --no-cache supervisor
+
+COPY --from=cors_supervisord /etc/supervisor/ /etc/supervisor/
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

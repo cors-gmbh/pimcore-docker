@@ -68,38 +68,3 @@ RUN chmod +x /usr/local/bin/health
 
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
-
-FROM cors_php AS cors_debug
-
-RUN apk add --no-cache \
-      apk-tools autoconf gcc make g++ automake nasm ninja cmake clang clang-dev; \
-    pecl install xdebug; \
-    docker-php-ext-enable xdebug; \
-    apk del autoconf gcc make g++ automake nasm ninja cmake clang clang-dev; \
-    rm -rf /var/cache/apk/*;
-
-COPY php/docker-xdebug-entrypoint.sh /usr/local/bin/xdebug-entrypoint
-
-RUN chmod +x /usr/local/bin/xdebug-entrypoint
-
-ENTRYPOINT ["xdebug-entrypoint"]
-
-
-FROM cors_php AS cors_supervisord
-
-RUN apk update && apk add --no-cache supervisor
-
-COPY supervisord/supervisord.conf /etc/supervisor/supervisord.conf
-COPY supervisord/pimcore.conf /etc/supervisor/conf.d/pimcore.conf
-
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
-
-
-FROM cors_debug AS cors_supervisord_debug
-
-RUN apk update && apk add --no-cache supervisor
-
-COPY --from=cors_supervisord /etc/supervisor/ /etc/supervisor/
-
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
-
