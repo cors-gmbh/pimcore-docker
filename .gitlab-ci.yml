@@ -53,7 +53,7 @@ variables:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli
     - IMAGE_NAME=$FROM_IMAGE_NAME-debug
 
-    - docker buildx build -f Dockerfile-supervisord --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+    - docker buildx build -f Dockerfile-supervisord --pull --cache-from=$IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
 .buildx_supervisord_debug:
   extends: .buildx
@@ -68,7 +68,7 @@ variables:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli-debug
     - IMAGE_NAME=$FROM_IMAGE_NAME-debug
 
-    - docker buildx build -f Dockerfile-supervisord --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+    - docker buildx build -f Dockerfile-supervisord --pull --cache-from=$IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
 .buildx_php:
   extends: .buildx
@@ -84,7 +84,7 @@ variables:
     - if [ $TARGET == "supervisord_debug" ]; then DOCKER_TAG="-supervisord-debug"; fi
     - if [ $TARGET == "debug" ]; then DOCKER_TAG="-$PHP_TYPE-debug"; fi
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
-    - docker buildx build --pull --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
+    - docker buildx build --pull --cache-from=$IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
 
 build_php:
   extends: .buildx_php
