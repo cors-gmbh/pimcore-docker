@@ -96,8 +96,10 @@ build_nginx:
     matrix:
       - NGINX_VERSION: [ '1.21' ]
   script:
-    - docker buildx build --pull -f Dockerfile-nginx --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION --push --platform linux/arm64/v8 .
-
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
+    - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --push --platform $CI_BUILDX_ARCHS .
+  tags:
+    - cors
 
 #build_nginx:
 #  stage: build
