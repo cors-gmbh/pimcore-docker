@@ -124,7 +124,7 @@ release_debug:
     refs:
       - tags
   needs:
-    - build_php
+    - release_php
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
