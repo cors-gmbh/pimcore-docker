@@ -58,6 +58,8 @@ variables:
 build_php:
   extends: .buildx_php
   stage: build_php
+  except:
+    - tags
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE
     - docker buildx build --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
@@ -65,6 +67,8 @@ build_php:
 build_debug:
   extends: .buildx_php_debug
   stage: build_php_debug
+  except:
+    - tags
   needs:
     - build_php
   script:
@@ -76,6 +80,8 @@ build_debug:
 build_supervisord:
   extends: .buildx_supervisord
   stage: build_supervisord
+  except:
+    - tags
   needs:
     - build_php
   script:
@@ -87,6 +93,8 @@ build_supervisord:
 build_supervisord_debug:
   extends: .buildx_supervisord_debug
   stage: build_supervisord_debug
+  except:
+    - tags
   needs:
     - build_supervisord
   script:
@@ -98,6 +106,8 @@ build_supervisord_debug:
 build_nginx:
   extends: .buildx
   stage: build_nginx
+  except:
+    - tags
   parallel:
     matrix:
       - NGINX_VERSION: [ '1.21' ]
