@@ -4,6 +4,11 @@ stages:
   - build_supervisord
   - build_supervisord_debug
   - build_nginx
+  - release_php
+  - release_php_debug
+  - release_supervisord
+  - release_supervisord_debug
+  - release_nginx
 
 variables:
   DOCKER_BUILDKIT: 1
@@ -29,9 +34,6 @@ variables:
       -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
           TARGET: ['php']
           PHP_TYPE: ['fpm', 'cli']
-  script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE
-    - docker buildx build --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
 
 .buildx_php_debug:
   extends: .buildx
@@ -40,55 +42,58 @@ variables:
       - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-  script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
-
-    - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
 .buildx_supervisord:
   extends: .buildx
   parallel:
     matrix:
       - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-  script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord
-
-    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
 
 .buildx_supervisord_debug:
   extends: .buildx
   parallel:
     matrix:
       - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-  script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord-debug
-
-    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
 
 build_php:
   extends: .buildx_php
   stage: build_php
+  script:
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE
+    - docker buildx build --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
 
 build_debug:
   extends: .buildx_php_debug
   stage: build_php_debug
   needs:
     - build_php
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
+
+    - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
 build_supervisord:
   extends: .buildx_supervisord
   stage: build_supervisord
   needs:
     - build_php
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord
+
+    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
 
 build_supervisord_debug:
   extends: .buildx_supervisord_debug
   stage: build_supervisord_debug
   needs:
     - build_supervisord
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord-debug
+
+    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
 
 build_nginx:
   extends: .buildx
@@ -100,58 +105,77 @@ build_nginx:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
     - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --push --platform $CI_BUILDX_ARCHS .
 
-#build_nginx:
-#  stage: build
-#  image: docker:stable
-#  only:
-#    refs:
-#      - tags
-#  parallel:
-#    matrix:
-#        - NGINX_VERSION: [ '1.21' ]
-#  before_script:
-#    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-#  script:
-#    - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG --target=cors_nginx --build-arg NGINX_VERSION=$NGINX_VERSION
-#    - docker tag $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
-#
-#    - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG
-#    - docker push $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
-#  tags:
-#    - cors
-#
-#build_alpine:
-#  stage: build
-#  image: docker:stable
-#  only:
-#    refs:
-#      - tags
-#  parallel:
-#    matrix:
-#      -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-#          TARGET: ['php', 'debug']
-#          PHP_TYPE: ['fpm', 'cli']
-#      -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
-#          TARGET: ['supervisord', 'supervisord_debug']
-#          PHP_TYPE: ['cli']
-#  variables:
-#    TAG: $CI_COMMIT_REF_NAME
-#  before_script:
-#    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-#  script:
-#    - DOCKER_TAG=-$PHP_TYPE;
-#    - if [ $PHP_TYPE == "fpm" ]; then DOCKER_TAG=""; fi
-#    - if [ $TARGET == "supervisord" ]; then DOCKER_TAG="-supervisord"; fi
-#    - if [ $TARGET == "supervisord_debug" ]; then DOCKER_TAG="-supervisord-debug"; fi
-#    - if [ $TARGET == "debug" ]; then DOCKER_TAG="-$PHP_TYPE-debug"; fi
-#
-#    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG
-#    - echo $IMAGE_NAME
-#
-#    - docker build . --tag $IMAGE_NAME:$PHP_VERSION-$TAG --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE
-#    - docker tag $IMAGE_NAME:$PHP_VERSION-$TAG $CI_REGISTRY_IMAGE/php-alpine$DOCKER_TAG:$PHP_VERSION-LATEST
-#
-#    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-#    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-#  tags:
-#    - cors
+release_php:
+  extends: .buildx_php
+  stage: release_php
+  only:
+    refs:
+      - tags
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
+  script:
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE
+    - docker buildx build --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --target=cors_$TARGET --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
+
+release_debug:
+  extends: .buildx_php_debug
+  stage: release_php_debug
+  only:
+    refs:
+      - tags
+  needs:
+    - build_php
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
+
+    - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+
+release_supervisord:
+  extends: .buildx_supervisord
+  stage: release_supervisord
+  only:
+    refs:
+      - tags
+  needs:
+    - release_php
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord
+
+    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
+
+release_supervisord_debug:
+  extends: .buildx_supervisord_debug
+  stage: release_supervisord_debug
+  only:
+    refs:
+      - tags
+  needs:
+    - release_supervisord
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord-debug
+
+    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
+
+release_nginx:
+  extends: .buildx
+  stage: release_nginx
+  only:
+    refs:
+      - tags
+  parallel:
+    matrix:
+      - NGINX_VERSION: [ '1.21' ]
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
+  script:
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
+    - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME:$NGINX_VERSION-$TAG --push --platform $CI_BUILDX_ARCHS .
