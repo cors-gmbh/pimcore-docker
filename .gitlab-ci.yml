@@ -24,6 +24,8 @@ variables:
     - docker buildx create --driver docker-container --use
     - docker buildx inspect --bootstrap
     - docker buildx ls
+  after_script:
+    - docker buildx rm --all-inactive
   tags:
     - cors
 
