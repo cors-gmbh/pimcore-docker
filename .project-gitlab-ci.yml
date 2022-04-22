@@ -67,13 +67,14 @@ update_manifest:
     - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH
   variables:
     CD_GIT_REPOSITORY: git.e-conomix.at/cors/$CD_CHART_REPO.git
+    CD_GIT_REPOSITORY_PATH: $CD_CHART_REPO
     CD_MANIFEST_VALUES_FILE: values-$CI_COMMIT_REF_NAME.yaml
   script:
     - apk add --no-cache git yq
     - git config --global user.name $CI_PROJECT_NAME
     - git config --global user.email $CI_PROJECT_NAME"-manifest@cors.gmbh"
-    - git clone https://gitlab-ci-token:${CD_PUSH_TOKEN}@${CD_GIT_REPOSITORY}
-    - cd $CD_CHART_REPO
+    - git clone https://gitlab-ci-token:${CD_PUSH_TOKEN}@${CD_GIT_REPOSITORY} repo
+    - cd repo
     - git checkout $CI_COMMIT_REF_NAME 2>/dev/null || $CI_COMMIT_REF_NAME checkout -b foo
 
     - yq -i eval ".pimcore.pimcore.image.tag = \"$TAG\"" $CD_MANIFEST_VALUES_FILE
