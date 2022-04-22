@@ -14,3 +14,4 @@ COPY php/docker-xdebug-entrypoint.sh /usr/local/bin/xdebug-entrypoint
 RUN chmod +x /usr/local/bin/xdebug-entrypoint
 
 ENTRYPOINT ["xdebug-entrypoint"]
+CMD ["php-fpm"]
