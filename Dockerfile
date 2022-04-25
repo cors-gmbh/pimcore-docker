@@ -15,8 +15,17 @@ RUN apk add --no-cache \
       libx11-dev libwebp libwebp-tools cmake unzip libxml2-dev libxslt-dev \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev  \
-      opencv opencv-dev py3-pip fcgi imagemagick imagemagick-dev \
+      opencv opencv-dev py3-pip fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli; \
+    curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
+      tar xvzf ImageMagick.tar.gz && \
+      cd ImageMagick-*; \
+      ./configure --with-lcms=yes --with-heic=yes;  \
+      make --jobs=$(nproc);  \
+      make install; \
+      /sbin/ldconfig /usr/local/lib; \
+      cd ..;  \
+      rm -rf ImageMagick.tar.gz ImageMagick-*; \
     pecl install imagick; \
     docker-php-ext-enable imagick; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
