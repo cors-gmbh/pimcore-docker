@@ -25,7 +25,7 @@ variables:
     - docker buildx inspect --bootstrap
     - docker buildx ls
   after_script:
-    - docker buildx rm --all-inactive
+    - docker buildx rm
   tags:
     - cors
 
