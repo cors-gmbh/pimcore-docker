@@ -1,12 +1,5 @@
 ARG PHP_VERSION="8.0"
 ARG PHP_TYPE="fpm"
-ARG NGINX_VERSION=1.21
-
-FROM nginx:${NGINX_VERSION}-alpine AS cors_nginx
-
-COPY nginx/nginx-default.conf /etc/nginx/conf.d/
-
-WORKDIR /var/www/html
 
 FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine as cors_php
 
@@ -65,6 +58,13 @@ RUN chmod +x /usr/local/bin/wait
 RUN chmod +x /usr/local/bin/wait_db
 RUN chmod +x /usr/local/bin/wait_pimcore
 RUN chmod +x /usr/local/bin/health
+
+FROM cors_php as cors_php_cli
+
+ENTRYPOINT ["docker-entrypoint"]
+CMD ["/bin/sh", "-c"]
+
+FROM cors_php as cors_php_fpm
 
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
