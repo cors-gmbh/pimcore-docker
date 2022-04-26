@@ -8,7 +8,7 @@ variables:
   APP_ENV: staging
   PROD_BRANCH: master
   STAGING_BRANCH: staging
-  DOCKER_BASE_VERSION: "1.5.0"
+  DOCKER_BASE_VERSION: "1.5.1"
   PHP_VERSION: "8.0"
 
 test:
