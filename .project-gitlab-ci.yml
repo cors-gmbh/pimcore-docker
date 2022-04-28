@@ -28,6 +28,8 @@ test:
     - composer install
   script:
     - vendor/bin/ecs check src
+  tags:
+    - cors
 
 build_and_push:
   stage: build
@@ -84,3 +86,5 @@ update_manifest:
 
     - git commit -am "[$CI_COMMIT_REF_NAME] update $CD_MANIFEST_VALUES_FILE to \"$TAG\""
     - git push origin $CI_COMMIT_REF_NAME
+  tags:
+    - cors
