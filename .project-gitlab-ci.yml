@@ -42,6 +42,8 @@ build_and_push:
       variables:
         APP_ENV: staging
     - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
   before_script:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
@@ -67,6 +69,8 @@ update_manifest:
     - job: build_and_push
   rules:
     - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
   variables:
     CD_GIT_REPOSITORY: git.e-conomix.at/cors/$CD_CHART_REPO.git
     CD_GIT_REPOSITORY_PATH: $CD_CHART_REPO
