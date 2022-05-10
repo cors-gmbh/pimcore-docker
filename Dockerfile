@@ -8,14 +8,13 @@ SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 ENV TIMEZONE Europe/Vienna
 
 RUN apk add --no-cache \
-      apk-tools autoconf gcc make g++ automake nasm ninja cmake clang clang-dev python3-dev \
-      curl tzdata freetype libbsd graphviz openssl openblas-dev \
-      ffmpeg html2text ghostscript libreoffice pngcrush jpegoptim \
-      exiftool poppler-utils git wget icu-dev oniguruma-dev \
-      libx11-dev libwebp libwebp-tools cmake unzip libxml2-dev libxslt-dev \
+      apk-tools autoconf gcc make g++ automake nasm cmake clang clang-dev \
+      curl tzdata freetype libbsd graphviz openssl openblas openblas-dev \
+      ffmpeg ghostscript libreoffice pngcrush jpegoptim \
+      exiftool poppler-utils wget icu-dev oniguruma-dev \
+      libwebp libwebp-tools cmake unzip libxml2-dev libxslt-dev \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
-      libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev  \
-      opencv opencv-dev py3-pip fcgi \
+      libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli; \
     curl -fsSL 'http://www.imagemagick.org/download/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
       tar xvzf ImageMagick.tar.gz && \
@@ -39,7 +38,7 @@ RUN apk add --no-cache \
     docker-php-ext-enable imap; \
     cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime; \
     echo "${TIMEZONE}" > /etc/timezone; \
-    apk del tzdata autoconf gcc make g++ automake nasm ninja cmake clang clang-dev; \
+    apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev; \
     rm -rf /var/cache/apk/*;
 
 COPY --from=madnight/alpine-wkhtmltopdf-builder:0.12.5-alpine3.10 \
