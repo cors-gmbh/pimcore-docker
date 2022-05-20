@@ -76,5 +76,9 @@ CMD ["/bin/sh", "-c"]
 
 FROM cors_php as cors_php_fpm
 
+COPY fpm/php.ini /usr/local/etc/php/php.ini
+COPY fpm/php-config.conf /usr/local/etc/php-fpm.conf
+COPY fpm/php-pool-config.conf /usr/local/etc/php-fpm.d/www.conf
+
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]

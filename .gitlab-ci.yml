@@ -1,11 +1,13 @@
 stages:
   - build_php
   - build_php_debug
+  - build_php_blackfire
   - build_supervisord
   - build_supervisord_debug
   - build_nginx
   - release_php
   - release_php_debug
+  - release_php_blackfire
   - release_supervisord
   - release_supervisord_debug
   - release_nginx
@@ -45,6 +47,12 @@ variables:
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
 
+.buildx_php_blackfire:
+  extends: .buildx
+  parallel:
+    matrix:
+      - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+
 .buildx_supervisord:
   extends: .buildx
   parallel:
@@ -78,6 +86,19 @@ build_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
 
     - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+
+build_blackfire:
+  extends: .buildx_php_blackfire
+  stage: build_php_blackfire
+  except:
+    - tags
+  needs:
+    - build_php
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire
+
+    - docker buildx build -f Dockerfile-blackfire --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
 build_supervisord:
   extends: .buildx_supervisord
@@ -144,6 +165,22 @@ release_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
 
     - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+
+release_blackfire:
+  extends: .buildx_php_blackfire
+  stage: release_php_blackfire
+  only:
+    refs:
+      - tags
+  needs:
+    - release_php
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
+  script:
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm:$PHP_VERSION-LATEST
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire
+
+    - docker buildx build -f Dockerfile-blackfire --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
 release_supervisord:
   extends: .buildx_supervisord
