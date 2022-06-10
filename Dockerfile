@@ -61,6 +61,8 @@ COPY php/docker-wait-db.sh /usr/local/bin/wait_db
 COPY php/docker-wait-pimcore.sh /usr/local/bin/wait_pimcore
 COPY php/docker-healthcheck.sh /usr/local/bin/health
 
+COPY fpm/php.ini /usr/local/etc/php/php.ini
+
 RUN chmod +x /usr/local/bin/docker-entrypoint
 RUN chmod +x /usr/local/bin/docker-migrate
 RUN chmod +x /usr/local/bin/install
@@ -76,7 +78,6 @@ CMD ["/bin/sh", "-c"]
 
 FROM cors_php as cors_php_fpm
 
-COPY fpm/php.ini /usr/local/etc/php/php.ini
 COPY fpm/php-config.conf /usr/local/etc/php-fpm.conf
 COPY fpm/php-pool-config.conf /usr/local/etc/php-fpm.d/www.conf
 

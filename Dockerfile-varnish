@@ -1,0 +1,8 @@
+ARG VARNISH_VERSION=7.1-alpine
+
+FROM varnish:${VARNISH_VERSION} as varnish
+
+USER root
+RUN rm /etc/varnish/default.vcl
+COPY varnish /etc/varnish
+USER varnish

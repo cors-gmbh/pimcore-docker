@@ -5,12 +5,14 @@ stages:
   - build_supervisord
   - build_supervisord_debug
   - build_nginx
+  - build_varnish
   - release_php
   - release_php_debug
   - release_php_blackfire
   - release_supervisord
   - release_supervisord_debug
   - release_nginx
+  - release_varnish
 
 variables:
   DOCKER_BUILDKIT: 1
@@ -138,6 +140,15 @@ build_nginx:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
     - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --push --platform $CI_BUILDX_ARCHS .
 
+build_varnish:
+  extends: .buildx
+  stage: build_varnish
+  except:
+    - tags
+  script:
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
+    - docker buildx build -f Dockerfile-varnish --pull --cache-from type=registry,ref=$IMAGE_NAME:cache --cache-to type=registry,ref=$IMAGE_NAME:cache,mode=max --tag $IMAGE_NAME:LATEST --push --platform $CI_BUILDX_ARCHS .
+
 release_php:
   extends: .buildx_php
   stage: release_php
@@ -228,3 +239,15 @@ release_nginx:
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
     - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME:$NGINX_VERSION-$TAG --push --platform $CI_BUILDX_ARCHS .
+
+release_varnish:
+  extends: .buildx
+  stage: release_varnish
+  only:
+    refs:
+      - tags
+  variables:
+    TAG: $CI_COMMIT_REF_NAME
+  script:
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
+    - docker buildx build -f Dockerfile-varnish --pull --cache-from type=registry,ref=$IMAGE_NAME:cache --cache-to type=registry,ref=$IMAGE_NAME:cache,mode=max --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME:$TAG --push --platform $CI_BUILDX_ARCHS .
