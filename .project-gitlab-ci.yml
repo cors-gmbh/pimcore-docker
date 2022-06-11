@@ -62,9 +62,9 @@ test:
     # update vulnerabilities db
     - time trivy image --download-db-only
     # Prints full report
-    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME" --timeout 15m0s
+    - time trivy image --exit-code 0 --timeout 15m0s "$FULL_IMAGE_NAME"
     # Fail on critical vulnerabilities
-    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME" --timeout 15m0s
+    - time trivy image --exit-code 1 --severity CRITICAL --timeout 15m0s "$FULL_IMAGE_NAME"
   cache:
     paths:
       - .trivycache/
