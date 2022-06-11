@@ -119,7 +119,7 @@ scan_php:
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
 
-build_debug:
+build_php_debug:
   extends: .buildx_php_debug
   stage: build_php_debug
   except:
@@ -132,13 +132,13 @@ build_debug:
 
     - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
-scan_debug:
-  stage: scan_debug
+scan_php_debug:
+  stage: scan_php_debug
   needs:
-    - build_debug
+    - build_php_debug
   extends:
     - .scan
-    - .buildx_debug
+    - .buildx_php_debug
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
 
