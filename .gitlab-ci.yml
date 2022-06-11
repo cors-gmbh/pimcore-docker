@@ -91,6 +91,7 @@ variables:
     TRIVY_AUTH_URL: "$CI_REGISTRY"
     TRIVY_NO_PROGRESS: "true"
     TRIVY_CACHE_DIR: ".trivycache/"
+  allow_failure: true
   before_script:
     - echo "scan image"
   after_script:
