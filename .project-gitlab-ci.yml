@@ -113,31 +113,31 @@ scan_php:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 scan_php_blackfire:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 scan_php_supervisord:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 scan_php_cli:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-cli:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 scan_nginx:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$TAG
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 update_manifest:
   stage: manifest
