@@ -119,31 +119,31 @@ scan_php:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $IMAGE_NAME_FPM
+    FULL_IMAGE_NAME: ${IMAGE_NAME_FPM}
 
 scan_php_blackfire:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $IMAGE_NAME_FPM_BLACKFIRE
+    FULL_IMAGE_NAME: ${IMAGE_NAME_FPM_BLACKFIRE}
 
 scan_php_supervisord:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $IMAGE_NAME_SUPERVISORD
+    FULL_IMAGE_NAME: ${IMAGE_NAME_SUPERVISORD}
 
 scan_php_cli:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $IMAGE_NAME_CLI
+    FULL_IMAGE_NAME: ${IMAGE_NAME_CLI}
 
 scan_nginx:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $IMAGE_NAME_NGINX
+    FULL_IMAGE_NAME: ${IMAGE_NAME_NGINX}
 
 update_manifest:
   stage: manifest
