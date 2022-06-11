@@ -158,7 +158,7 @@ build_php_blackfire:
 scan_php_blackfire:
   stage: scan_php_blackfire
   needs:
-    - scan_php_blackfire
+    - build_php_blackfire
   extends:
     - .scan
     - .buildx_php_blackfire
