@@ -1,6 +1,7 @@
 stages:
   - test
   - build
+  - scan
   - manifest
 
 variables:
@@ -28,6 +29,45 @@ test:
     - composer install
   script:
     - vendor/bin/ecs check src
+  tags:
+    - cors
+
+.scan:
+  image:
+    name: docker.io/aquasec/trivy:latest
+    entrypoint: [ "" ]
+  variables:
+    GIT_STRATEGY: none
+    TRIVY_USERNAME: "$CI_REGISTRY_USER"
+    TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
+    TRIVY_AUTH_URL: "$CI_REGISTRY"
+    TRIVY_NO_PROGRESS: "true"
+    TRIVY_CACHE_DIR: ".trivycache/"
+  allow_failure: true
+  before_script:
+    - echo "scan image"
+  after_script:
+    - echo "scan complete"
+  script:
+    - trivy --version
+    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
+    - time trivy image --clear-cache
+    # update vulnerabilities db
+    - time trivy image --download-db-only
+    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
+    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
+      --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
+    # Prints full report
+    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
+    # Fail on critical vulnerabilities
+    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
+  cache:
+    paths:
+      - .trivycache/
+  artifacts:
+    when: always
+    reports:
+      container_scanning: gl-container-scanning-report.json
   tags:
     - cors
 
@@ -61,6 +101,66 @@ build_and_push:
     - docker push $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
   tags:
     - cors
+
+scan_php:
+  stage: scan
+  needs:
+    - build_and_push
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+  extends:
+    - .scan
+  variables:
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
+
+scan_php_blackfire:
+  stage: scan
+  needs:
+    - build_and_push
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+  extends:
+    - .scan
+  variables:
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
+
+scan_php_supervisord:
+  stage: scan
+  needs:
+    - build_and_push
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+  extends:
+    - .scan
+  variables:
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
+
+scan_php_cli:
+  stage: scan
+  needs:
+    - build_and_push
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+  extends:
+    - .scan
+  variables:
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
+
+scan_nginx:
+  stage: scan
+  needs:
+    - build_and_push
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+  extends:
+    - .scan
+  variables:
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$TAG
 
 update_manifest:
   stage: manifest
