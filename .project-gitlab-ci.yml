@@ -5,7 +5,7 @@ stages:
   - manifest
 
 variables:
-  TAG: $CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+  TAG: ${CI_COMMIT_REF_NAME}-{$CI_COMMIT_SHORT_SHA}
   APP_ENV: staging
   PROD_BRANCH: master
   STAGING_BRANCH: staging
