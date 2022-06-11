@@ -12,6 +12,12 @@ variables:
   DOCKER_BASE_VERSION: "1.5.1"
   PHP_VERSION: "8.0"
 
+  IMAGE_NAME_FPM: $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
+  IMAGE_NAME_FPM_BLACKFIRE: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
+  IMAGE_NAME_SUPERVISORD: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
+  IMAGE_NAME_CLI: $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
+  IMAGE_NAME_NGINX: $CI_REGISTRY_IMAGE/nginx:$TAG
+
 test:
   stage: test
   image: git.e-conomix.at:5050/cors/docker/php-alpine-cli:$PHP_VERSION-$DOCKER_BASE_VERSION
@@ -95,17 +101,17 @@ build_and_push:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
-    - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG --target=cors_php --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
-    - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG --target=cors_php_blackfire --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
-    - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
-    - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG --target=cors_php_cli --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
-    - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$TAG --target=cors_nginx --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
+    - docker build . --tag $IMAGE_NAME_FPM --target=cors_php --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
+    - docker build . --tag $IMAGE_NAME_FPM_BLACKFIRE --target=cors_php_blackfire --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
+    - docker build . --tag $IMAGE_NAME_SUPERVISORD --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
+    - docker build . --tag $IMAGE_NAME_CLI --target=cors_php_cli --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
+    - docker build . --tag $IMAGE_NAME_NGINX --target=cors_nginx --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
 
-    - docker push $CI_REGISTRY_IMAGE/nginx:$TAG
-    - docker push $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
-    - docker push $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
-    - docker push $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
-    - docker push $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
+    - docker push $IMAGE_NAME_FPM
+    - docker push $IMAGE_NAME_FPM_BLACKFIRE
+    - docker push $IMAGE_NAME_SUPERVISORD
+    - docker push $IMAGE_NAME_CLI
+    - docker push $IMAGE_NAME_NGINX
   tags:
     - cors
 
@@ -113,31 +119,31 @@ scan_php:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
+    FULL_IMAGE_NAME: $IMAGE_NAME_FPM
 
 scan_php_blackfire:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
+    FULL_IMAGE_NAME: $IMAGE_NAME_FPM_BLACKFIRE
 
 scan_php_supervisord:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
+    FULL_IMAGE_NAME: $IMAGE_NAME_SUPERVISORD
 
 scan_php_cli:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
+    FULL_IMAGE_NAME: $IMAGE_NAME_CLI
 
 scan_nginx:
   extends:
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$TAG
+    FULL_IMAGE_NAME: $IMAGE_NAME_NGINX
 
 update_manifest:
   stage: manifest
