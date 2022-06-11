@@ -36,6 +36,13 @@ test:
   image:
     name: docker.io/aquasec/trivy:latest
     entrypoint: [ "" ]
+  stage: scan
+  needs:
+    - build_and_push
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
   variables:
     GIT_STRATEGY: none
     TRIVY_USERNAME: "$CI_REGISTRY_USER"
@@ -103,60 +110,30 @@ build_and_push:
     - cors
 
 scan_php:
-  stage: scan
-  needs:
-    - build_and_push
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
   extends:
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
 
 scan_php_blackfire:
-  stage: scan
-  needs:
-    - build_and_push
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
   extends:
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
 
 scan_php_supervisord:
-  stage: scan
-  needs:
-    - build_and_push
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
   extends:
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
 
 scan_php_cli:
-  stage: scan
-  needs:
-    - build_and_push
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
   extends:
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
 
 scan_nginx:
-  stage: scan
-  needs:
-    - build_and_push
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: never
   extends:
     - .scan
   variables:
