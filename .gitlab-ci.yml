@@ -85,7 +85,8 @@ variables:
     name: docker.io/aquasec/trivy:latest
     entrypoint: [ "" ]
   before_script:
-    - echo "trivy"
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
+    - docker image pull $FULL_IMAGE_NAME
   script:
     - trivy --version
     # cache cleanup is needed when scanning images with the same tags, it does not remove the database
