@@ -142,7 +142,7 @@ scan_php_debug:
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
 
-build_blackfire:
+build_php_blackfire:
   extends: .buildx_php_blackfire
   stage: build_php_blackfire
   except:
@@ -155,10 +155,10 @@ build_blackfire:
 
     - docker buildx build -f Dockerfile-blackfire --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
 
-scan_blackfire:
-  stage: scan_blackfire
+scan_php_blackfire:
+  stage: scan_php_blackfire
   needs:
-    - build_blackfire
+    - scan_php_blackfire
   extends:
     - .scan
     - .buildx_php_blackfire
