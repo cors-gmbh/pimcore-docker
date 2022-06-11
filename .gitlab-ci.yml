@@ -78,7 +78,7 @@ variables:
   extends: .buildx
   parallel:
     matrix:
-      - NGINX_VERSION: [ '1.21' ]
+      - NGINX_VERSION: [ '1.21', '1.22' ]
 
 .scan:
   image:
@@ -132,6 +132,8 @@ scan_php:
   stage: scan_php
   needs:
     - build_php
+  except:
+    - tags
   extends:
     - .buildx_php
     - .scan
@@ -155,6 +157,8 @@ scan_php_debug:
   stage: scan_php_debug
   needs:
     - build_php_debug
+  except:
+    - tags
   extends:
     - .buildx_php_debug
     - .scan
@@ -178,6 +182,8 @@ scan_php_blackfire:
   stage: scan_php_blackfire
   needs:
     - build_php_blackfire
+  except:
+    - tags
   extends:
     - .buildx_php_blackfire
     - .scan
@@ -201,6 +207,8 @@ scan_supervisord:
   stage: scan_supervisord
   needs:
     - build_supervisord
+  except:
+    - tags
   extends:
     - .buildx_supervisord
     - .scan
@@ -224,6 +232,8 @@ scan_supervisord_debug:
   stage: scan_supervisord_debug
   needs:
     - build_supervisord_debug
+  except:
+    - tags
   extends:
     - .buildx_supervisord_debug
     - .scan
@@ -243,6 +253,8 @@ scan_nginx:
   stage: scan_nginx
   needs:
     - build_nginx
+  except:
+    - tags
   extends:
     - .build_nginx
     - .scan
@@ -262,6 +274,8 @@ scan_varnish:
   stage: scan_varnish
   needs:
     - build_varnish
+  except:
+    - tags
   extends:
     - .scan
   variables:
