@@ -84,6 +84,8 @@ variables:
   image:
     name: docker.io/aquasec/trivy:latest
     entrypoint: [ "" ]
+  before_script:
+    - echo "trivy"
   script:
     - trivy --version
     # cache cleanup is needed when scanning images with the same tags, it does not remove the database
@@ -114,8 +116,8 @@ scan_php:
   needs:
     - build_php
   extends:
-    - .scan
     - .buildx_php
+    - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
 
@@ -137,8 +139,8 @@ scan_php_debug:
   needs:
     - build_php_debug
   extends:
-    - .scan
     - .buildx_php_debug
+    - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
 
@@ -160,8 +162,8 @@ scan_php_blackfire:
   needs:
     - build_php_blackfire
   extends:
-    - .scan
     - .buildx_php_blackfire
+    - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
 
@@ -183,8 +185,8 @@ scan_supervisord:
   needs:
     - build_supervisord
   extends:
-    - .scan
     - .buildx_supervisord
+    - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
 
@@ -206,8 +208,8 @@ scan_supervisord_debug:
   needs:
     - build_supervisord_debug
   extends:
-    - .scan
     - .buildx_supervisord_debug
+    - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
 
@@ -225,8 +227,8 @@ scan_nginx:
   needs:
     - build_nginx
   extends:
-    - .scan
     - .build_nginx
+    - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
 
