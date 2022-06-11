@@ -247,7 +247,7 @@ scan_nginx:
     - .build_nginx
     - .scan
   variables:
-    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/$CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
 
 build_varnish:
   extends: .buildx
