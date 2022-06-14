@@ -1,8 +1,8 @@
 stages:
   - test
   - build
-  - scan
   - manifest
+  - scan
 
 variables:
   TAG: $CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
