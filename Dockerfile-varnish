@@ -3,6 +3,15 @@ ARG VARNISH_VERSION=7.1-alpine
 FROM varnish:${VARNISH_VERSION} as varnish
 
 USER root
+
+RUN set -x && \
+    apk add --update gettext
+
 RUN rm /etc/varnish/default.vcl
-COPY varnish /etc/varnish
+COPY varnish/config /etc/varnish
+COPY varnish/entrypoint.sh /usr/local/bin/cors-entrypoint.sh
+RUN chmod +x /usr/local/bin/cors-entrypoint.sh
+RUN chown varnish:varnish /etc/varnish/varnish.vcl
 USER varnish
+
+ENTRYPOINT /usr/local/bin/cors-entrypoint.sh
