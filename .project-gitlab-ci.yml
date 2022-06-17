@@ -99,7 +99,7 @@ build_and_push:
     - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
     - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG --target=cors_php_cli --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
     - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$TAG --target=cors_nginx --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
-    - if [ "$VARNISH" = "true" ] ; then docker build . --tag $CI_REGISTRY_IMAGE/varnish:$TAG --target=cors_varnish; fi
+    - if [ "$VARNISH" = "true" ] ; then docker build . --tag $CI_REGISTRY_IMAGE/varnish:$TAG --target=cors_varnish --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"; fi
 
     - docker push $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
     - docker push $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
