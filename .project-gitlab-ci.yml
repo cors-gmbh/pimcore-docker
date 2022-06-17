@@ -93,6 +93,7 @@ build_and_push:
     - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
+    - printenv
     - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG --target=cors_php --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
     - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG --target=cors_php_blackfire --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
     - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
