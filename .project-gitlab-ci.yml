@@ -11,6 +11,7 @@ variables:
   STAGING_BRANCH: staging
   DOCKER_BASE_VERSION: "1.5.1"
   PHP_VERSION: "8.0"
+  VARNISH: "false"
 
 test:
   stage: test
@@ -97,12 +98,14 @@ build_and_push:
     - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
     - docker build . --tag $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG --target=cors_php_cli --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
     - docker build . --tag $CI_REGISTRY_IMAGE/nginx:$TAG --target=cors_nginx --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION"
+    - if [ "$VARNISH" = "true" ] ; then docker build . --tag $CI_REGISTRY_IMAGE/varnish:$TAG --target=cors_varnish fi
 
     - docker push $CI_REGISTRY_IMAGE/php-alpine-fpm:$TAG
     - docker push $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
     - docker push $CI_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
     - docker push $CI_REGISTRY_IMAGE/php-alpine-cli:$TAG
     - docker push $CI_REGISTRY_IMAGE/nginx:$TAG
+    - if [ "$VARNISH" = "true" ] ; then docker push $CI_REGISTRY_IMAGE/varnish:$TAG fi
   tags:
     - cors
 
@@ -135,6 +138,16 @@ scan_nginx:
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+
+scan_varnish:
+  extends:
+    - .scan
+  rules:
+    - if: ($CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH) && $VARNISH == "true"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: never
+  variables:
+    FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 update_manifest:
   stage: manifest
