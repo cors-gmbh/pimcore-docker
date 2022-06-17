@@ -176,6 +176,8 @@ update_manifest:
     - yq -i eval ".pimcore.supervisord.image.tag = \"$TAG\"" $CD_MANIFEST_VALUES_FILE
     - yq -i eval ".pimcore.pimcore.cli.image.tag = \"$TAG\"" $CD_MANIFEST_VALUES_FILE
 
+    - if [ "$VARNISH" = "true" ]; yq -i eval ".pimcore.varnish.image.tag = \"$TAG\"" $CD_MANIFEST_VALUES_FILE; fi
+
     - git commit -am "[$CI_COMMIT_REF_NAME] update $CD_MANIFEST_VALUES_FILE to \"$TAG\""
     - git push origin $CI_COMMIT_REF_NAME
   tags:
