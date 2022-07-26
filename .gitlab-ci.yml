@@ -44,7 +44,7 @@ variables:
   extends: .buildx
   parallel:
     matrix:
-      -   PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+      -   PHP_VERSION: [ '8.0', '8.1' ]
           TARGET: ['php']
           PHP_TYPE: ['fpm', 'cli']
 
@@ -52,7 +52,7 @@ variables:
   extends: .buildx
   parallel:
     matrix:
-      - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+      - PHP_VERSION: [ '8.0', '8.1' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
 
@@ -60,19 +60,19 @@ variables:
   extends: .buildx
   parallel:
     matrix:
-      - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+      - PHP_VERSION: [ '8.0', '8.1' ]
 
 .buildx_supervisord:
   extends: .buildx
   parallel:
     matrix:
-      - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+      - PHP_VERSION: [ '8.0', '8.1' ]
 
 .buildx_supervisord_debug:
   extends: .buildx
   parallel:
     matrix:
-      - PHP_VERSION: [ '7.4', '8.0', '8.1' ]
+      - PHP_VERSION: [ '8.0', '8.1' ]
 
 .build_nginx:
   extends: .buildx

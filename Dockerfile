@@ -1,7 +1,8 @@
 ARG PHP_VERSION="8.0"
 ARG PHP_TYPE="fpm"
+ARG ALPINE_VERSION=3.16
 
-FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine as cors_php
+FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} as cors_php
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
@@ -16,7 +17,7 @@ RUN apk add --no-cache \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
-      musl-locales icu-data; \
+      musl-locales icu-data-full; \
     curl -fsSL 'https://imagemagick.org/archive/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
       tar xvzf ImageMagick.tar.gz && \
       cd ImageMagick-*; \
