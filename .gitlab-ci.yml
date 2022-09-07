@@ -431,7 +431,6 @@ manifest_nginx:
 manifest_varnish:
   extends:
     - .manifest
-    - .build_varnish
   stage: manifest_varnish
   needs:
     - build_varnish
