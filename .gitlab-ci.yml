@@ -434,21 +434,6 @@ manifest_nginx:
   tags:
     - cors
 
-manifest_varnish:
-  extends:
-    - .manifest
-  stage: manifest_varnish
-  needs:
-    - build_varnish
-  except:
-    - tags
-  variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:LATEST
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/varnish:LATEST
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/varnish:LATEST
-  tags:
-    - cors
-
 release_php:
   extends: .build_php
   stage: release_php
