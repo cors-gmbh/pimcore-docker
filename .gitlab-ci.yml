@@ -199,7 +199,7 @@ build_php_debug:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE-debug
 
     - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
@@ -224,7 +224,7 @@ build_php_blackfire:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-fpm:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-fpm-blackfire
 
     - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
@@ -249,7 +249,7 @@ build_supervisord:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-cli:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord
 
     - docker build -f Dockerfile-supervisord ---tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
@@ -274,7 +274,7 @@ build_supervisord_debug:
   needs:
     - build_supervisord
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord-debug
 
     - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
