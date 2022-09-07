@@ -301,7 +301,7 @@ build_nginx:
   except:
     - tags
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/nginx
     - docker build -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST .
     - docker push "$IMAGE_NAME:$NGINX_VERSION-LATEST"
 
