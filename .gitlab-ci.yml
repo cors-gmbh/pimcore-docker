@@ -6,6 +6,13 @@ stages:
   - build_supervisord_debug
   - build_nginx
   - build_varnish
+  - manifest_php
+  - manifest_php_debug
+  - manifest_php_blackfire
+  - manifest_supervisord
+  - manifest_supervisord_debug
+  - manifest_nginx
+  - manifest_varnish
   - release_php
   - release_php_debug
   - release_php_blackfire
@@ -13,6 +20,13 @@ stages:
   - release_supervisord_debug
   - release_nginx
   - release_varnish
+  - manifest_release_php
+  - manifest_release_php_debug
+  - manifest_release_php_blackfire
+  - manifest_release_supervisord
+  - manifest_release_supervisord_debug
+  - manifest_release_nginx
+  - manifest_release_varnish
   - scan_php
   - scan_php_debug
   - scan_php_blackfire
@@ -21,64 +35,100 @@ stages:
   - scan_nginx
   - scan_varnish
 
-variables:
-  DOCKER_BUILDKIT: 1
-  DOCKER_DRIVER: overlay2
-  CI_BUILDX_ARCHS: "linux/amd64"
-
-.buildx:
-  stage: build_php
-  image: registry.gitlab.com/ericvh/docker-buildx-qemu
+.build:
+  image: docker:stable
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-    - update-binfmts --enable
-    - docker buildx create --driver docker-container --use
-    - docker buildx inspect --bootstrap
-    - docker buildx ls
-  after_script:
-    - docker buildx rm
   tags:
     - cors
 
-.buildx_php:
-  extends: .buildx
+.manifest:
+  extends: .build
+  image: docker:stable
+  variables:
+    - IMAGE_NAME_ARM
+    - IMAGE_NAME_AMD
+    - IMAGE_NAME
+  script:
+    - CI_MANIFEST_LIST="$IMAGE_NAME_AMD $IMAGE_NAME_ARM"
+
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - docker manifest create $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
+
+.manifest_release:
+  extends: .manifest
+  variables:
+    - IMAGE_NAME_ARM
+    - IMAGE_NAME_ARM_TAG
+    - IMAGE_NAME_AMD
+    - IMAGE_NAME_AMD_TAG
+    - IMAGE_NAME
+    - IMAGE_NAME_TAG
+  script:
+    - CI_MANIFEST_LIST="$IMAGE_NAME_AMD $IMAGE_NAME_ARM"
+    - CI_MANIFEST_LIST_TAG="$IMAGE_NAME_AMD_TAG $IMAGE_NAME_ARM_TAG"
+
+    - export DOCKER_CLI_EXPERIMENTAL=enabled
+    - docker manifest create $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
+    - docker manifest create $IMAGE_NAME_TAG $CI_MANIFEST_LIST_TAG && docker manifest push $IMAGE_NAME_TAG
+
+.build_php:
+  extends: .build
   parallel:
     matrix:
-      -   PHP_VERSION: [ '8.0', '8.1' ]
+      -   ARCH: ['amd', 'arm']
+          PHP_VERSION: [ '8.0', '8.1' ]
           TARGET: ['php']
           PHP_TYPE: ['fpm', 'cli']
+  tags:
+    - cors-${ARCH}
 
-.buildx_php_debug:
-  extends: .buildx
+.build_php_debug:
+  extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.0', '8.1' ]
+      - ARCH: ['amd', 'arm']
+        PHP_VERSION: [ '8.0', '8.1' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
+  tags:
+    - cors-${ARCH}
 
-.buildx_php_blackfire:
-  extends: .buildx
+.build_php_blackfire:
+  extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.0', '8.1' ]
+      - ARCH: ['amd', 'arm']
+        PHP_VERSION: [ '8.0', '8.1' ]
+  tags:
+    - cors-${ARCH}
 
-.buildx_supervisord:
-  extends: .buildx
+.build_supervisord:
+  extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.0', '8.1' ]
+      - ARCH: ['amd', 'arm']
+        PHP_VERSION: [ '8.0', '8.1' ]
+  tags:
+    - cors-${ARCH}
 
-.buildx_supervisord_debug:
-  extends: .buildx
+.build_supervisord_debug:
+  extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.0', '8.1' ]
+      - ARCH: ['amd', 'arm']
+        PHP_VERSION: [ '8.0', '8.1' ]
+  tags:
+    - cors-${ARCH}
 
 .build_nginx:
-  extends: .buildx
+  extends: .build
   parallel:
     matrix:
-      - NGINX_VERSION: [ '1.21', '1.22' ]
+      - ARCH: ['amd', 'arm']
+        NGINX_VERSION: [ '1.21', '1.22' ]
+  tags:
+    - cors-${ARCH}
 
 .scan:
   image:
@@ -120,28 +170,29 @@ variables:
     - cors
 
 build_php:
-  extends: .buildx_php
+  extends: .build_php
   stage: build_php
   except:
     - tags
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE
-    - docker buildx build --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE
+    - docker build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE .
+    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
 
 scan_php:
   stage: scan_php
   needs:
-    - build_php
+    - manifest_php
   except:
     - tags
   extends:
-    - .buildx_php
+    - .build_php
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
 
 build_php_debug:
-  extends: .buildx_php_debug
+  extends: .build_php_debug
   stage: build_php_debug
   except:
     - tags
@@ -149,24 +200,24 @@ build_php_debug:
     - build_php
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE-debug
 
-    - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
 
 scan_php_debug:
   stage: scan_php_debug
   needs:
-    - build_php_debug
+    - manifest_php_debug
   except:
     - tags
   extends:
-    - .buildx_php_debug
+    - .build_php_debug
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
 
 build_php_blackfire:
-  extends: .buildx_php_blackfire
+  extends: .build_php_blackfire
   stage: build_php_blackfire
   except:
     - tags
@@ -174,24 +225,24 @@ build_php_blackfire:
     - build_php
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-fpm-blackfire
 
-    - docker buildx build -f Dockerfile-blackfire --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
 
 scan_php_blackfire:
   stage: scan_php_blackfire
   needs:
-    - build_php_blackfire
+    - manifest_php_blackfire
   except:
     - tags
   extends:
-    - .buildx_php_blackfire
+    - .build_php_blackfire
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
 
 build_supervisord:
-  extends: .buildx_supervisord
+  extends: .build_supervisord
   stage: build_supervisord
   except:
     - tags
@@ -199,24 +250,24 @@ build_supervisord:
     - build_php
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord
 
-    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-supervisord ---tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
 
 scan_supervisord:
   stage: scan_supervisord
   needs:
-    - build_supervisord
+    - manifest_supervisord
   except:
     - tags
   extends:
-    - .buildx_supervisord
+    - .build_supervisord
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
 
 build_supervisord_debug:
-  extends: .buildx_supervisord_debug
+  extends: .build_supervisord_debug
   stage: build_supervisord_debug
   except:
     - tags
@@ -224,18 +275,18 @@ build_supervisord_debug:
     - build_supervisord
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord-debug
 
     - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
 
 scan_supervisord_debug:
   stage: scan_supervisord_debug
   needs:
-    - build_supervisord_debug
+    - manifest_supervisord_debug
   except:
     - tags
   extends:
-    - .buildx_supervisord_debug
+    - .build_supervisord_debug
     - .scan
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
@@ -247,12 +298,12 @@ build_nginx:
     - tags
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
-    - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST .
 
 scan_nginx:
   stage: scan_nginx
   needs:
-    - build_nginx
+    - manifest_nginx
   except:
     - tags
   extends:
@@ -262,18 +313,18 @@ scan_nginx:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
 
 build_varnish:
-  extends: .buildx
+  extends: .build
   stage: build_varnish
   except:
     - tags
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
-    - docker buildx build -f Dockerfile-varnish --pull --cache-from type=registry,ref=$IMAGE_NAME:cache --cache-to type=registry,ref=$IMAGE_NAME:cache,mode=max --tag $IMAGE_NAME:LATEST --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST .
 
 scan_varnish:
   stage: scan_varnish
   needs:
-    - build_varnish
+    - manifest_varnish
   except:
     - tags
   extends:
@@ -281,8 +332,92 @@ scan_varnish:
   variables:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:LATEST
 
+manifest_php:
+  extends: .manifest
+  stage: manifest_php
+  needs:
+   - build_php
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+
+manifest_php_debug:
+  extends: .manifest
+  stage: manifest_php_debug
+  needs:
+    - build_php_debug
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+
+manifest_php_blackfire:
+  extends: .manifest
+  stage: manifest_php_debug
+  needs:
+    - build_php_blackfire
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
+
+manifest_supervisord:
+  extends: .manifest
+  stage: manifest_supervisord
+  needs:
+    - build_supervisord
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord:$PHP_VERSION-LATEST
+
+manifest_supervisord_debug:
+  extends: .manifest
+  stage: manifest_supervisord_debug
+  needs:
+    - build_supervisord_debug
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
+
+manifest_nginx:
+  extends: .manifest
+  stage: manifest_nginx
+  needs:
+    - build_nginx
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-LATEST
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
+
+manifest_varnish:
+  extends: .manifest
+  stage: manifest_varnish
+  needs:
+    - build_varnish
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:LATEST
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/varnish:LATEST
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/varnish:LATEST
+
 release_php:
-  extends: .buildx_php
+  extends: .build_php
   stage: release_php
   only:
     refs:
@@ -290,11 +425,11 @@ release_php:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE
-    - docker buildx build --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --push --platform $CI_BUILDX_ARCHS .
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE
+    - docker build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE .
 
 release_debug:
-  extends: .buildx_php_debug
+  extends: .build_php_debug
   stage: release_php_debug
   only:
     refs:
@@ -304,13 +439,13 @@ release_debug:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
 
-    - docker buildx build -f Dockerfile-debug --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push .
 
 release_blackfire:
-  extends: .buildx_php_blackfire
+  extends: .build_php_blackfire
   stage: release_php_blackfire
   only:
     refs:
@@ -320,13 +455,13 @@ release_blackfire:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-fpm:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire
 
-    - docker buildx build -f Dockerfile-blackfire --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
 
 release_supervisord:
-  extends: .buildx_supervisord
+  extends: .build_supervisord
   stage: release_supervisord
   only:
     refs:
@@ -336,13 +471,13 @@ release_supervisord:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-cli:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-cli:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord
 
-    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME .
 
 release_supervisord_debug:
-  extends: .buildx_supervisord_debug
+  extends: .build_supervisord_debug
   stage: release_supervisord_debug
   only:
     refs:
@@ -352,13 +487,13 @@ release_supervisord_debug:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord-debug
 
-    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME .
 
 release_nginx:
-  extends: .buildx
+  extends: .build
   stage: release_nginx
   only:
     refs:
@@ -369,11 +504,11 @@ release_nginx:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
-    - docker buildx build -f Dockerfile-nginx --pull --cache-from type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$NGINX_VERSION-cache,mode=max --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME:$NGINX_VERSION-$TAG --push --platform $CI_BUILDX_ARCHS .
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/nginx
+    - docker build -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME:$NGINX_VERSION-$TAG .
 
 release_varnish:
-  extends: .buildx
+  extends: .build
   stage: release_varnish
   only:
     refs:
@@ -381,5 +516,110 @@ release_varnish:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
-    - docker buildx build -f Dockerfile-varnish --pull --cache-from type=registry,ref=$IMAGE_NAME:cache --cache-to type=registry,ref=$IMAGE_NAME:cache,mode=max --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME:$TAG --push --platform $CI_BUILDX_ARCHS .
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/varnish
+    - docker build -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME:$TAG .
+
+manifest_release_php:
+  extends: .manifest_release
+  stage: manifest_php
+  needs:
+    - build_php
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-$TAG
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE:$PHP_VERSION-$TAG
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE:$PHP_VERSION-$TAG
+
+manifest_release_php_debug:
+  extends: .manifest_release
+  stage: manifest_php_debug
+  needs:
+    - build_php_debug
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-$TAG
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-$TAG
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-$TAG
+
+manifest_release_php_blackfire:
+  extends: .manifest_release
+  stage: manifest_php_debug
+  needs:
+    - build_php_blackfire
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
+    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$PHP_VERSION-$TAG
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-fpm-blackfire:$PHP_VERSION-$TAG
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-fpm-blackfire:$PHP_VERSION-$TAG
+
+manifest_release_supervisord:
+  extends: .manifest_release
+  stage: manifest_supervisord
+  needs:
+    - build_supervisord
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
+    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-$TAG
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord:$PHP_VERSION-$TAG
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord:$PHP_VERSION-$TAG
+
+manifest_release_supervisord_debug:
+  extends: .manifest_release
+  stage: manifest_supervisord_debug
+  needs:
+    - build_supervisord_debug
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-supervisord-debug:$PHP_VERSION-$TAG
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord-debug:$PHP_VERSION-$TAG
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
+    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord-debug:$PHP_VERSION-$TAG
+
+manifest_release_nginx:
+  extends: .manifest_release
+  stage: manifest_nginx
+  needs:
+    - build_nginx
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
+    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$TAG
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-LATEST
+    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-$TAG
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
+    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-$TAG
+
+manifest_release_varnish:
+  extends: .manifest_release
+  stage: manifest_varnish
+  needs:
+    - build_varnish
+  except:
+    - tags
+  variables:
+    IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:LATEST
+    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/varnish:$TAG
+    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/varnish:LATEST
+    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/varnish:$TAG
+    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/varnish:LATEST
+    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/varnish:$TAG
