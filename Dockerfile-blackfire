@@ -15,7 +15,7 @@ RUN version=$(php -r "echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;") \
     && mkdir -p /tmp/blackfire \
     && curl -A "Docker" -L https://blackfire.io/api/v1/releases/cli/linux/$architecture | tar zxp -C /tmp/blackfire \
     && mv /tmp/blackfire/blackfire /usr/bin/blackfire \
-    && rm -Rf /tmp/blackfire; \
+    && rm -Rf /tmp/blackfire;
 
 COPY blackfire/blackfire.ini /usr/local/etc/php/conf.d/blackfire.ini
 
