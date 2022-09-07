@@ -20,13 +20,13 @@ stages:
   - release_supervisord_debug
   - release_nginx
   - release_varnish
-  - manifest_release_php
-  - manifest_release_php_debug
-  - manifest_release_php_blackfire
-  - manifest_release_supervisord
-  - manifest_release_supervisord_debug
-  - manifest_release_nginx
-  - manifest_release_varnish
+  - release_manifest_php
+  - release_manifest_php_debug
+  - release_manifest_php_blackfire
+  - release_manifest_supervisord
+  - release_manifest_supervisord_debug
+  - release_manifest_nginx
+  - release_manifest_varnish
   - scan_php
   - scan_php_debug
   - scan_php_blackfire
@@ -203,6 +203,7 @@ build_php_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE-debug
 
     - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
+    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
 
 scan_php_debug:
   stage: scan_php_debug
@@ -228,6 +229,7 @@ build_php_blackfire:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-fpm-blackfire
 
     - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
+    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
 
 scan_php_blackfire:
   stage: scan_php_blackfire
@@ -253,6 +255,7 @@ build_supervisord:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord
 
     - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
+    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
 
 scan_supervisord:
   stage: scan_supervisord
@@ -277,7 +280,8 @@ build_supervisord_debug:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord-debug
 
-    - docker buildx build -f Dockerfile-supervisord --pull --cache-from type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache --cache-to type=registry,ref=$IMAGE_NAME:$PHP_VERSION-cache,mode=max --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --push --platform $CI_BUILDX_ARCHS .
+    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
+    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
 
 scan_supervisord_debug:
   stage: scan_supervisord_debug
@@ -299,6 +303,7 @@ build_nginx:
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/nginx
     - docker build -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST .
+    - docker push "$IMAGE_NAME:$NGINX_VERSION-LATEST"
 
 scan_nginx:
   stage: scan_nginx
@@ -320,6 +325,7 @@ build_varnish:
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
     - docker build -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST .
+    - docker push "$IMAGE_NAME:LATEST"
 
 scan_varnish:
   stage: scan_varnish
@@ -548,7 +554,7 @@ release_varnish:
 
 manifest_release_php:
   extends: .manifest_release
-  stage: manifest_php
+  stage: release_manifest_php
   needs:
     - build_php
   except:
@@ -563,7 +569,7 @@ manifest_release_php:
 
 manifest_release_php_debug:
   extends: .manifest_release
-  stage: manifest_php_debug
+  stage: release_manifest_php_debug
   needs:
     - build_php_debug
   except:
@@ -578,7 +584,7 @@ manifest_release_php_debug:
 
 manifest_release_php_blackfire:
   extends: .manifest_release
-  stage: manifest_php_debug
+  stage: release_manifest_php_debug
   needs:
     - build_php_blackfire
   except:
@@ -593,7 +599,7 @@ manifest_release_php_blackfire:
 
 manifest_release_supervisord:
   extends: .manifest_release
-  stage: manifest_supervisord
+  stage: release_manifest_supervisord
   needs:
     - build_supervisord
   except:
@@ -608,7 +614,7 @@ manifest_release_supervisord:
 
 manifest_release_supervisord_debug:
   extends: .manifest_release
-  stage: manifest_supervisord_debug
+  stage: release_manifest_supervisord_debug
   needs:
     - build_supervisord_debug
   except:
@@ -623,7 +629,7 @@ manifest_release_supervisord_debug:
 
 manifest_release_nginx:
   extends: .manifest_release
-  stage: manifest_nginx
+  stage: release_manifest_nginx
   needs:
     - build_nginx
   except:
@@ -638,7 +644,7 @@ manifest_release_nginx:
 
 manifest_release_varnish:
   extends: .manifest_release
-  stage: manifest_varnish
+  stage: release_manifest_varnish
   needs:
     - build_varnish
   except:
