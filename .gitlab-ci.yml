@@ -53,7 +53,7 @@ stages:
     - CI_MANIFEST_LIST="$IMAGE_NAME_AMD $IMAGE_NAME_ARM"
 
     - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - docker manifest create $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
+    - docker manifest create --amend $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
 
 .manifest_release:
   extends: .manifest
@@ -69,8 +69,8 @@ stages:
     - CI_MANIFEST_LIST_TAG="$IMAGE_NAME_AMD_TAG $IMAGE_NAME_ARM_TAG"
 
     - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - docker manifest create $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
-    - docker manifest create $IMAGE_NAME_TAG $CI_MANIFEST_LIST_TAG && docker manifest push $IMAGE_NAME_TAG
+    - docker manifest create --amend $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
+    - docker manifest create --amend $IMAGE_NAME_TAG $CI_MANIFEST_LIST_TAG && docker manifest push $IMAGE_NAME_TAG
 
 .build_php:
   extends: .build
