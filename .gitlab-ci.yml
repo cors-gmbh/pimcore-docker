@@ -252,7 +252,7 @@ build_supervisord:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-cli:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord
 
-    - docker build -f Dockerfile-supervisord ---tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
+    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
 
 scan_supervisord:
   stage: scan_supervisord
@@ -333,7 +333,9 @@ scan_varnish:
     FULL_IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:LATEST
 
 manifest_php:
-  extends: .manifest
+  extends:
+    - .manifest
+    - .build_php
   stage: manifest_php
   needs:
    - build_php
@@ -343,9 +345,13 @@ manifest_php:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
     IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
+  tags:
+    - cors
 
 manifest_php_debug:
-  extends: .manifest
+  extends:
+    - .manifest
+    - .build_php_debug
   stage: manifest_php_debug
   needs:
     - build_php_debug
@@ -355,10 +361,14 @@ manifest_php_debug:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+  tags:
+    - cors
 
 manifest_php_blackfire:
-  extends: .manifest
-  stage: manifest_php_debug
+  extends:
+    - .manifest
+    - .build_php_blackfire
+  stage: manifest_php_blackfire
   needs:
     - build_php_blackfire
   except:
@@ -367,9 +377,13 @@ manifest_php_blackfire:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
+  tags:
+    - cors
 
 manifest_supervisord:
-  extends: .manifest
+  extends:
+    - .manifest
+    - .build_supervisord
   stage: manifest_supervisord
   needs:
     - build_supervisord
@@ -379,9 +393,13 @@ manifest_supervisord:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord:$PHP_VERSION-LATEST
+  tags:
+    - cors
 
 manifest_supervisord_debug:
-  extends: .manifest
+  extends:
+    - .manifest
+    - .build_supervisord_debug
   stage: manifest_supervisord_debug
   needs:
     - build_supervisord_debug
@@ -391,9 +409,13 @@ manifest_supervisord_debug:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
+  tags:
+    - cors
 
 manifest_nginx:
-  extends: .manifest
+  extends:
+    - .manifest
+    - .build_nginx
   stage: manifest_nginx
   needs:
     - build_nginx
@@ -403,9 +425,13 @@ manifest_nginx:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
+  tags:
+    - cors
 
 manifest_varnish:
-  extends: .manifest
+  extends:
+    - .manifest
+    - .build_varnish
   stage: manifest_varnish
   needs:
     - build_varnish
@@ -415,6 +441,8 @@ manifest_varnish:
     IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:LATEST
     IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/varnish:LATEST
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/varnish:LATEST
+  tags:
+    - cors
 
 release_php:
   extends: .build_php
