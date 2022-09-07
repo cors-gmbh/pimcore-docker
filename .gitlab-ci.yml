@@ -26,7 +26,6 @@ stages:
   - release_manifest_supervisord
   - release_manifest_supervisord_debug
   - release_manifest_nginx
-  - release_manifest_varnish
   - scan_php
   - scan_php_debug
   - scan_php_blackfire
@@ -330,7 +329,7 @@ build_varnish:
 scan_varnish:
   stage: scan_varnish
   needs:
-    - manifest_varnish
+    - build_varnish
   except:
     - tags
   extends:
@@ -534,7 +533,7 @@ release_varnish:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/varnish
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
     - docker build -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME:$TAG .
 
 release_manifest_php:
@@ -632,19 +631,3 @@ release_manifest_nginx:
     IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-$TAG
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-$TAG
-
-release_manifest_varnish:
-  extends: .manifest_release
-  stage: release_manifest_varnish
-  needs:
-    - build_varnish
-  only:
-    refs:
-      - tags
-  variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/varnish:LATEST
-    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/varnish:$TAG
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/varnish:LATEST
-    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/varnish:$TAG
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/varnish:LATEST
-    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/varnish:$TAG
