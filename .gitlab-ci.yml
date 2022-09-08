@@ -520,19 +520,17 @@ release_supervisord_debug:
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
 
 release_nginx:
-  extends: .build
+  extends: .build_nginx
   stage: release_nginx
   only:
     refs:
       - tags
-  parallel:
-    matrix:
-      - NGINX_VERSION: [ '1.21' ]
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/nginx
     - docker build -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME:$NGINX_VERSION-$TAG .
+
     - docker push $IMAGE_NAME:$NGINX_VERSION-$TAG
     - docker push $IMAGE_NAME:$NGINX_VERSION-LATEST
 
@@ -551,7 +549,9 @@ release_varnish:
     - docker push $IMAGE_NAME:$TAG
 
 release_manifest_php:
-  extends: .manifest_release
+  extends:
+    - .manifest_release
+    - .build_php
   stage: release_manifest_php
   needs:
     - release_php
@@ -567,7 +567,9 @@ release_manifest_php:
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE:$PHP_VERSION-$TAG
 
 release_manifest_php_debug:
-  extends: .manifest_release
+  extends:
+    - .manifest_release
+    - .build_php_debug
   stage: release_manifest_php_debug
   needs:
     - release_php_debug
@@ -583,7 +585,9 @@ release_manifest_php_debug:
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-$TAG
 
 release_manifest_php_blackfire:
-  extends: .manifest_release
+  extends:
+    - .manifest_release
+    - .build_php_blackfire
   stage: release_manifest_php_blackfire
   needs:
     - release_php_blackfire
@@ -599,7 +603,9 @@ release_manifest_php_blackfire:
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-fpm-blackfire:$PHP_VERSION-$TAG
 
 release_manifest_supervisord:
-  extends: .manifest_release
+  extends:
+    - .manifest_release
+    - .build_supervisord
   stage: release_manifest_supervisord
   needs:
     - release_supervisord
@@ -615,7 +621,9 @@ release_manifest_supervisord:
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord:$PHP_VERSION-$TAG
 
 release_manifest_supervisord_debug:
-  extends: .manifest_release
+  extends:
+    - .manifest_release
+    - .build_supervisord_debug
   stage: release_manifest_supervisord_debug
   needs:
     - release_supervisord_debug
@@ -631,7 +639,9 @@ release_manifest_supervisord_debug:
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord-debug:$PHP_VERSION-$TAG
 
 release_manifest_nginx:
-  extends: .manifest_release
+  extends:
+    - .manifest_release
+    - .build_nginx
   stage: release_manifest_nginx
   needs:
     - release_nginx
