@@ -447,7 +447,7 @@ release_php:
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
 
-release_debug:
+release_php_debug:
   extends: .build_php_debug
   stage: release_php_debug
   only:
