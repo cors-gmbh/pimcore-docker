@@ -461,7 +461,7 @@ release_php_debug:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
 
-    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION --push .
+    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
 
