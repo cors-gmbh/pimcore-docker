@@ -499,7 +499,7 @@ release_php_debug:
     TAG: $CI_COMMIT_REF_NAME
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-$PHP_TYPE-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$PHP_TYPE-debug
 
     - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
@@ -517,7 +517,7 @@ release_php_blackfire:
     TAG: $CI_COMMIT_REF_NAME
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-fpm:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-fpm-blackfire
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-fpm-blackfire
 
     - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
@@ -535,7 +535,7 @@ release_supervisord:
     TAG: $CI_COMMIT_REF_NAME
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-cli:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord
 
     - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
@@ -553,7 +553,7 @@ release_supervisord_debug:
     TAG: $CI_COMMIT_REF_NAME
   script:
     - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/php-alpine-supervisord-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord-debug
 
     - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
