@@ -465,7 +465,7 @@ release_php_debug:
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
 
-release_blackfire:
+release_php_blackfire:
   extends: .build_php_blackfire
   stage: release_php_blackfire
   only:
