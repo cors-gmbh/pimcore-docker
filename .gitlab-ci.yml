@@ -565,6 +565,8 @@ release_manifest_php:
     IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE:$PHP_VERSION-$TAG
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE:$PHP_VERSION-$TAG
+  tags:
+    - cors
 
 release_manifest_php_debug:
   extends:
@@ -583,6 +585,8 @@ release_manifest_php_debug:
     IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-$TAG
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$PHP_TYPE-debug:$PHP_VERSION-$TAG
+  tags:
+    - cors
 
 release_manifest_php_blackfire:
   extends:
@@ -601,6 +605,8 @@ release_manifest_php_blackfire:
     IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-fpm-blackfire:$PHP_VERSION-$TAG
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-fpm-blackfire:$PHP_VERSION-$TAG
+  tags:
+    - cors
 
 release_manifest_supervisord:
   extends:
@@ -619,6 +625,8 @@ release_manifest_supervisord:
     IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord:$PHP_VERSION-$TAG
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord:$PHP_VERSION-$TAG
+  tags:
+    - cors
 
 release_manifest_supervisord_debug:
   extends:
@@ -637,6 +645,8 @@ release_manifest_supervisord_debug:
     IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-supervisord-debug:$PHP_VERSION-$TAG
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-supervisord-debug:$PHP_VERSION-$TAG
+  tags:
+    - cors
 
 release_manifest_nginx:
   extends:
@@ -655,3 +665,5 @@ release_manifest_nginx:
     IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-$TAG
     IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-$TAG
+  tags:
+    - cors
