@@ -6,5 +6,6 @@ RUN apk update && apk add --no-cache supervisor
 
 COPY supervisord/supervisord.conf /etc/supervisor/supervisord.conf
 COPY supervisord/pimcore.conf /etc/supervisor/conf.d/pimcore.conf
+COPY supervisord/coreshop._conf /etc/supervisor/conf.d/coreshop._conf
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
