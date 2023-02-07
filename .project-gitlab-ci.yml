@@ -13,6 +13,10 @@ variables:
   PHP_VERSION: "8.0"
   NGINX_VERSION: "1.21"
   VARNISH: "false"
+  TEST_PHPSTAN: "false"
+  TEST_LINT_TWIG: "true"
+  TEST_LINT_YAML: "true"
+  TEST_LINT_CONTAINER: "true"
 
 test:
   stage: test
@@ -31,6 +35,11 @@ test:
     - composer install
   script:
     - vendor/bin/ecs check src
+    - if [ "$TEST_LINT_TWIG" = "true" ] ; bin/console lint:twig templates; fi
+    - if [ "$TEST_LINT_TWIG" = "true" ] ; bin/console lint:twig themes; fi
+    - if [ "$TEST_LINT_YAML" = "true" ] ; bin/console lint:yaml config; fi
+    - if [ "$TEST_LINT_CONTAINER" = "true" ] ; bin/console lint:container; fi
+    - if [ "$VARNISH" = "true" ] ; then vendor/bin/phpstan analyse src; fi
   tags:
     - cors
 
