@@ -39,7 +39,7 @@ test:
     - if [ "$TEST_LINT_TWIG" = "true" ] ; then bin/console lint:twig themes; fi
     - if [ "$TEST_LINT_YAML" = "true" ] ; then bin/console lint:yaml config; fi
     - if [ "$TEST_LINT_CONTAINER" = "true" ] ; then bin/console lint:container; fi
-    - if [ "$VARNISH" = "true" ] ; then vendor/bin/phpstan analyse src; fi
+    - if [ "$TEST_PHPSTAN" = "true" ] ; then vendor/bin/phpstan analyse src; fi
   tags:
     - cors
 
