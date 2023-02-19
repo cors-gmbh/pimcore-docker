@@ -200,8 +200,7 @@ variables:
   allow_failure: true
   before_script:
     - echo "scan image"
-    - export GCP_KEY=$(echo $GOOGLE_ARTIFACT_REGISTRY | base64 -d)
-    - GCR_AUTH=$(echo "_json_key:$GCP_KEY" | base64 | tr -d '[:space:]')
+    - mkdir -p ~/.docker && GCR_AUTH=$(echo "_json_key:$GOOGLE_ARTIFACT_REGISTRY" | tr -d '[:space:]')
     - |
       cat << EOF > ~/.docker/config.json
       {"auths":
