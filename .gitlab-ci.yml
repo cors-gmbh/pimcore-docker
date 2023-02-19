@@ -200,7 +200,7 @@ variables:
   allow_failure: true
   before_script:
     - echo "scan image"
-    - export GOOGLE_APPLICATION_CREDENTIALS=${base64 -d $GOOGLE_ARTIFACT_REGISTRY}
+    - export GOOGLE_APPLICATION_CREDENTIALS=$(echo $GOOGLE_ARTIFACT_REGISTRY | base64 -d)
   after_script:
     - echo "scan complete"
   script:
