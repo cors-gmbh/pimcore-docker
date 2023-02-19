@@ -35,13 +35,13 @@ stages:
   - scan_varnish
 
 variables:
-  GCP_REGISTRY_IMAGE: cors-wolke/$CI_PROJECT_PATH
+  GCP_REGISTRY_IMAGE: gcr.io/cors-wolke/$CI_PROJECT_PATH
 
 .build:
   image: docker:stable
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
-    - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://eu.gcr.io
+    - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://gcr.io
   tags:
     - cors
 
