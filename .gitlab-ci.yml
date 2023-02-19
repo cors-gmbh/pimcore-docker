@@ -206,7 +206,7 @@ variables:
           mkdir ~/.docker && cat << EOF > ~/.docker/config.json
           {"auths":
               {
-                "us-central1-docker.pkg.dev": { "auth": "$GCR_AUTH" }
+                "europe-west3-docker.pkg.dev": { "auth": "$GCR_AUTH" }
               }
           }
       EOF
