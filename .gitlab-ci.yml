@@ -35,7 +35,7 @@ stages:
   - scan_varnish
 
 variables:
-  GCP_REGISTRY_IMAGE: eu.gcr.io/cors-wolke/$CI_PROJECT_PATH
+  GCP_REGISTRY_IMAGE: cors-wolke/$CI_PROJECT_PATH
 
 .build:
   image: docker:stable
