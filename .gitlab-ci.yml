@@ -201,6 +201,7 @@ variables:
   before_script:
     - echo "scan image"
     - export GOOGLE_APPLICATION_CREDENTIALS=$(echo $GOOGLE_ARTIFACT_REGISTRY | base64 -d)
+    - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
   after_script:
     - echo "scan complete"
   script:
