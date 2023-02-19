@@ -200,8 +200,16 @@ variables:
   allow_failure: true
   before_script:
     - echo "scan image"
-    - export GOOGLE_APPLICATION_CREDENTIALS=$(echo $GOOGLE_ARTIFACT_REGISTRY | base64 -d)
-    - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
+    - export GCP_KEY=$(echo $GOOGLE_ARTIFACT_REGISTRY | base64 -d)
+    - GCR_AUTH=$(echo "_json_key:$GCP_KEY" | base64 | tr -d '[:space:]')
+          - |
+          mkdir ~/.docker && cat << EOF > ~/.docker/config.json
+          {"auths":
+              {
+                "us-central1-docker.pkg.dev": { "auth": "$GCR_AUTH" }
+              }
+          }
+      EOF
   after_script:
     - echo "scan complete"
   script:
