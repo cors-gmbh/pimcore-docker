@@ -202,13 +202,13 @@ variables:
     - echo "scan image"
     - export GCP_KEY=$(echo $GOOGLE_ARTIFACT_REGISTRY | base64 -d)
     - GCR_AUTH=$(echo "_json_key:$GCP_KEY" | base64 | tr -d '[:space:]')
-          - |
-          mkdir ~/.docker && cat << EOF > ~/.docker/config.json
-          {"auths":
-              {
-                "europe-west3-docker.pkg.dev": { "auth": "$GCR_AUTH" }
-              }
-          }
+    - |
+      cat << EOF > ~/.docker/config.json
+      {"auths":
+        {
+          "europe-west3-docker.pkg.dev":{"auth":"$GCR_AUTH"}
+        }
+      }
       EOF
   after_script:
     - echo "scan complete"
