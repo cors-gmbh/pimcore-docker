@@ -1,5 +1,5 @@
 [program:coreshop]
-command=php /var/www/html/bin/console messenger:consume coreshop_notification coreshop_index --memory-limit=250M --time-limit=3600
+command=php /var/www/html/bin/console messenger:consume coreshop_notification coreshop_index --memory-limit=250M --time-limit=300
 numprocs=1
 startsecs=0
 autostart=true
