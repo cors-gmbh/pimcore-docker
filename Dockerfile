@@ -11,8 +11,7 @@ ENV TIMEZONE Europe/Vienna
 RUN apk add --no-cache \
       apk-tools autoconf gcc make g++ automake nasm cmake clang clang-dev \
       curl tzdata freetype libbsd graphviz openssl openblas openblas-dev \
-      ffmpeg ghostscript libreoffice pngcrush jpegoptim \
-      exiftool poppler-utils wget icu-dev oniguruma-dev \
+      ffmpeg pngcrush jpegoptim exiftool poppler-utils wget icu-dev oniguruma-dev \
       libwebp libwebp-tools cmake unzip libxml2-dev libxslt-dev \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
