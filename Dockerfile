@@ -17,6 +17,7 @@ RUN apk add --no-cache \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
       musl-locales icu-data-full lcms2-dev; \
+    if [ "$ALPINE" = "3.17" ]; then apk add ghostscript libreoffice; fi; \
     curl -fsSL 'https://imagemagick.org/archive/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
       tar xvzf ImageMagick.tar.gz && \
       cd ImageMagick-*; \
@@ -26,6 +27,7 @@ RUN apk add --no-cache \
       /sbin/ldconfig /usr/local/lib; \
       cd ..;  \
       rm -rf ImageMagick.tar.gz ImageMagick-*; \
+      rm -rf /usr/local/share/ImageMagick-7; \
     pecl install imagick; \
     docker-php-ext-enable imagick; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
@@ -42,8 +44,8 @@ RUN apk add --no-cache \
     apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev; \
     rm -rf /var/cache/apk/*;
 
-COPY --from=madnight/alpine-wkhtmltopdf-builder:0.12.5-alpine3.10 \
-    /bin/wkhtmltopdf /bin/wkhtmltopdf
+
+
 
 ENV COMPOSER_ALLOW_SUPERUSER 1
 ENV COMPOSER_MEMORY_LIMIT -1
