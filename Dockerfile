@@ -4,7 +4,13 @@ ARG ALPINE_VERSION=3.16
 
 FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} as cors_php
 
+ARG PHP_VERSION
+ARG PHP_TYPE
+ARG ALPINE_VERSION
+
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
+
+RUN if [ "$ALPINE_VERSION" = "3.17" ]; then apk add ghostscript libreoffice; fi;
 
 ENV TIMEZONE Europe/Vienna
 
