@@ -10,8 +10,6 @@ ARG ALPINE_VERSION
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
-RUN if [ "$ALPINE_VERSION" = "3.17" ]; then apk add ghostscript libreoffice; fi;
-
 ENV TIMEZONE Europe/Vienna
 
 RUN apk add --no-cache \
