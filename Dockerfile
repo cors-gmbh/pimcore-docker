@@ -17,7 +17,7 @@ RUN apk add --no-cache \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
       musl-locales icu-data-full lcms2-dev; \
-    if [ "$ALPINE" = "3.17" ]; then apk add ghostscript libreoffice; fi; \
+    if [ "$ALPINE_VERSION" = "3.17" ]; then apk add ghostscript libreoffice; fi; \
     curl -fsSL 'https://imagemagick.org/archive/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
       tar xvzf ImageMagick.tar.gz && \
       cd ImageMagick-*; \
