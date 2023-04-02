@@ -315,7 +315,7 @@ build_php_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
 
-    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
+    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
@@ -344,7 +344,7 @@ build_php_blackfire:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
 
-    - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
+    - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
@@ -373,7 +373,7 @@ build_supervisord:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
 
-    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
+    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
@@ -402,7 +402,7 @@ build_supervisord_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
 
-    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
+    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
@@ -591,7 +591,7 @@ release_php:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
 
-    - docker build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE .
+    - docker build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
@@ -613,7 +613,7 @@ release_php_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
 
-    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
+    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
