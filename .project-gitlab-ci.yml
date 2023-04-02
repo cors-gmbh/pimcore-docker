@@ -19,10 +19,11 @@ variables:
   TEST_LINT_YAML: "true"
   TEST_LINT_CONTAINER: "true"
   GCP_URL: europe-west3-docker.pkg.dev
+  TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
 
 test:
   stage: test
-  image: git.e-conomix.at:5050/cors/docker/php-alpine-$ALPINE_VERSION-cli:$PHP_VERSION-$DOCKER_BASE_VERSION
+  image: $TEST_IMAGE:$PHP_VERSION-$DOCKER_BASE_VERSION
   variables:
     DATABASE_HOST: ""
     DATABASE_PORT: ""
