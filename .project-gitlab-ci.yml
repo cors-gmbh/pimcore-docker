@@ -22,7 +22,7 @@ variables:
 
 test:
   stage: test
-  image: git.e-conomix.at:5050/cors/docker/php-alpine-cli:$PHP_VERSION-$DOCKER_BASE_VERSION
+  image: git.e-conomix.at:5050/cors/docker/php-alpine-$ALPINE_VERSION-cli:$PHP_VERSION-$DOCKER_BASE_VERSION
   variables:
     DATABASE_HOST: ""
     DATABASE_PORT: ""
