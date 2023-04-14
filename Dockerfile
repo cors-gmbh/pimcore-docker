@@ -67,6 +67,7 @@ COPY php/docker-wait.sh /usr/local/bin/wait
 COPY php/docker-wait-db.sh /usr/local/bin/wait_db
 COPY php/docker-wait-pimcore.sh /usr/local/bin/wait_pimcore
 COPY php/docker-healthcheck.sh /usr/local/bin/health
+COPY php/docker-status.sh /usr/local/bin/status
 
 COPY fpm/php.ini /usr/local/etc/php/php.ini
 
@@ -77,6 +78,7 @@ RUN chmod +x /usr/local/bin/wait
 RUN chmod +x /usr/local/bin/wait_db
 RUN chmod +x /usr/local/bin/wait_pimcore
 RUN chmod +x /usr/local/bin/health
+RUN chmod +x /usr/local/bin/status
 
 FROM cors_php as cors_php_cli
 
