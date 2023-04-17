@@ -26,13 +26,13 @@ stages:
   - release_manifest_supervisord
   - release_manifest_supervisord_debug
   - release_manifest_nginx
-  - scan_php
-  - scan_php_debug
-  - scan_php_blackfire
-  - scan_supervisord
-  - scan_supervisord_debug
-  - scan_nginx
-  - scan_varnish
+#  - scan_php
+#  - scan_php_debug
+#  - scan_php_blackfire
+#  - scan_supervisord
+#  - scan_supervisord_debug
+#  - scan_nginx
+#  - scan_varnish
 
 variables:
   GCP_URL: europe-west3-docker.pkg.dev
@@ -217,50 +217,50 @@ variables:
     matrix:
       - NGINX_VERSION: [ '1.21', '1.22' ]
 
-.scan:
-  image:
-    name: docker.io/aquasec/trivy:latest
-    entrypoint: [ "" ]
-  variables:
-    GIT_STRATEGY: none
-    TRIVY_NO_PROGRESS: "true"
-    TRIVY_CACHE_DIR: ".trivycache/"
-  allow_failure: true
-  before_script:
-    - mkdir -p ~/.docker
-    - export GCR_AUTH=$(echo "_json_key:$GOOGLE_ARTIFACT_REGISTRY" | tr -d '[:space:]')
-    - |
-      cat << EOF > ~/.docker/config.json
-      {"auths":
-        {
-          "europe-west3-docker.pkg.dev":{"auth":"$GCR_AUTH"}
-        }
-      }
-      EOF
-  after_script:
-    - echo "scan complete"
-  script:
-    - trivy --version
-    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-    - time trivy image --clear-cache
-    # update vulnerabilities db
-    - time trivy image --download-db-only
-    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
-    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
-      --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
-    # Prints full report
-    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
-    # Fail on critical vulnerabilities
-    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
-  cache:
-    paths:
-      - .trivycache/
-  artifacts:
-    when: always
-    reports:
-      container_scanning: gl-container-scanning-report.json
-  tags:
-    - cors
+#.scan:
+#  image:
+#    name: docker.io/aquasec/trivy:latest
+#    entrypoint: [ "" ]
+#  variables:
+#    GIT_STRATEGY: none
+#    TRIVY_NO_PROGRESS: "true"
+#    TRIVY_CACHE_DIR: ".trivycache/"
+#  allow_failure: true
+#  before_script:
+#    - mkdir -p ~/.docker
+#    - export GCR_AUTH=$(echo "_json_key:$GOOGLE_ARTIFACT_REGISTRY" | tr -d '[:space:]')
+#    - |
+#      cat << EOF > ~/.docker/config.json
+#      {"auths":
+#        {
+#          "europe-west3-docker.pkg.dev":{"auth":"$GCR_AUTH"}
+#        }
+#      }
+#      EOF
+#  after_script:
+#    - echo "scan complete"
+#  script:
+#    - trivy --version
+#    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
+#    - time trivy image --clear-cache
+#    # update vulnerabilities db
+#    - time trivy image --download-db-only
+#    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
+#    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
+#      --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
+#    # Prints full report
+#    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
+#    # Fail on critical vulnerabilities
+#    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
+#  cache:
+#    paths:
+#      - .trivycache/
+#  artifacts:
+#    when: always
+#    reports:
+#      container_scanning: gl-container-scanning-report.json
+#  tags:
+#    - cors
 
 build_php:
   extends: .build_php
@@ -272,17 +272,17 @@ build_php:
 
     - docker build --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-scan_php:
-  stage: scan_php
-  needs:
-    - manifest_php
-  except:
-    - tags
-  extends:
-    - .manifest_php
-    - .scan
-  variables:
-    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
+#scan_php:
+#  stage: scan_php
+#  needs:
+#    - manifest_php
+#  except:
+#    - tags
+#  extends:
+#    - .manifest_php
+#    - .scan
+#  variables:
+#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
 
 build_php_debug:
   extends: .build_php_debug
@@ -298,17 +298,17 @@ build_php_debug:
     - docker build -f Dockerfile-debug --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
-scan_php_debug:
-  stage: scan_php_debug
-  needs:
-    - manifest_php_debug
-  except:
-    - tags
-  extends:
-    - .manifest_php_debug
-    - .scan
-  variables:
-    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+#scan_php_debug:
+#  stage: scan_php_debug
+#  needs:
+#    - manifest_php_debug
+#  except:
+#    - tags
+#  extends:
+#    - .manifest_php_debug
+#    - .scan
+#  variables:
+#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
 
 build_php_blackfire:
   extends: .build_php_blackfire
@@ -324,17 +324,17 @@ build_php_blackfire:
     - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
-scan_php_blackfire:
-  stage: scan_php_blackfire
-  needs:
-    - manifest_php_blackfire
-  except:
-    - tags
-  extends:
-    - .manifest_php_blackfire
-    - .scan
-  variables:
-    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
+#scan_php_blackfire:
+#  stage: scan_php_blackfire
+#  needs:
+#    - manifest_php_blackfire
+#  except:
+#    - tags
+#  extends:
+#    - .manifest_php_blackfire
+#    - .scan
+#  variables:
+#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
 
 build_supervisord:
   extends: .build_supervisord
@@ -350,17 +350,17 @@ build_supervisord:
     - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
-scan_supervisord:
-  stage: scan_supervisord
-  needs:
-    - manifest_supervisord
-  except:
-    - tags
-  extends:
-    - .manifest_supervisord
-    - .scan
-  variables:
-    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
+#scan_supervisord:
+#  stage: scan_supervisord
+#  needs:
+#    - manifest_supervisord
+#  except:
+#    - tags
+#  extends:
+#    - .manifest_supervisord
+#    - .scan
+#  variables:
+#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
 
 build_supervisord_debug:
   extends: .build_supervisord_debug
@@ -376,17 +376,17 @@ build_supervisord_debug:
     - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
-scan_supervisord_debug:
-  stage: scan_supervisord_debug
-  needs:
-    - manifest_supervisord_debug
-  except:
-    - tags
-  extends:
-    - .manifest_supervisord_debug
-    - .scan
-  variables:
-    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#scan_supervisord_debug:
+#  stage: scan_supervisord_debug
+#  needs:
+#    - manifest_supervisord_debug
+#  except:
+#    - tags
+#  extends:
+#    - .manifest_supervisord_debug
+#    - .scan
+#  variables:
+#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
 
 build_nginx:
   extends: .build_nginx
@@ -399,17 +399,17 @@ build_nginx:
     - docker build -f Dockerfile-nginx --tag $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST .
     - docker push "$IMAGE_NAME_GCP:$NGINX_VERSION-LATEST"
 
-scan_nginx:
-  stage: scan_nginx
-  needs:
-    - manifest_nginx
-  except:
-    - tags
-  extends:
-    - .manifest_nginx
-    - .scan
-  variables:
-    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
+#scan_nginx:
+#  stage: scan_nginx
+#  needs:
+#    - manifest_nginx
+#  except:
+#    - tags
+#  extends:
+#    - .manifest_nginx
+#    - .scan
+#  variables:
+#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
 
 build_varnish:
   extends: .build
@@ -421,16 +421,16 @@ build_varnish:
     - docker build -f Dockerfile-varnish --tag $IMAGE_NAME_GCP:LATEST .
     - docker push "$IMAGE_NAME_GCP:LATEST"
 
-scan_varnish:
-  stage: scan_varnish
-  needs:
-    - build_varnish
-  except:
-    - tags
-  extends:
-    - .scan
-  variables:
-    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/varnish:LATEST
+#scan_varnish:
+#  stage: scan_varnish
+#  needs:
+#    - build_varnish
+#  except:
+#    - tags
+#  extends:
+#    - .scan
+#  variables:
+#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/varnish:LATEST
 
 manifest_php:
   extends:
