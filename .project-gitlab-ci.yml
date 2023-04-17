@@ -20,7 +20,7 @@ variables:
   TEST_LINT_CONTAINER: "true"
   GCP_URL: europe-west3-docker.pkg.dev
   TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
-  REGISTRY_URL: $GCP_URL/cors/docker
+  REGISTRY_URL: $GCP_URL/cors-wolke/cors/docker
 
 test:
   stage: test
