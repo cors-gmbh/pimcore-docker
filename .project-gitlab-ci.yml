@@ -20,6 +20,7 @@ variables:
   TEST_LINT_CONTAINER: "true"
   GCP_URL: europe-west3-docker.pkg.dev
   TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
+  REGISTRY_URL: $GCP_URL/cors/docker
 
 test:
   stage: test
@@ -106,16 +107,15 @@ build_and_push:
       when: on_success
   before_script:
     - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
-
     - export GCP_REGISTRY_IMAGE=$(echo "$GCP_URL/cors-wolke/$CI_PROJECT_PATH" | tr '[:upper:]' '[:lower:]')
   script:
     - printenv
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG           --target=cors_php             --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG --target=cors_php_blackfire   --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-supervisord:$TAG   --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-cli:$TAG           --target=cors_php_cli         --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/nginx:$TAG                    --target=cors_nginx           --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION"
-    - if [ "$VARNISH" = "true" ] ; then docker build . --tag $GCP_REGISTRY_IMAGE/varnish:$TAG --target=cors_varnish --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION"; fi
+    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG           --target=cors_php             --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
+    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG --target=cors_php_blackfire   --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
+    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-supervisord:$TAG   --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
+    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-cli:$TAG           --target=cors_php_cli         --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
+    - docker build . --tag $GCP_REGISTRY_IMAGE/nginx:$TAG                    --target=cors_nginx           --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
+    - if [ "$VARNISH" = "true" ] ; then docker build . --tag $GCP_REGISTRY_IMAGE/varnish:$TAG --target=cors_varnish --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"; fi
 
     - docker push $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
     - docker push $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
