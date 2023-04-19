@@ -576,7 +576,7 @@ release_php_blackfire:
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
 
     - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
-    
+
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
@@ -628,8 +628,6 @@ release_nginx:
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/nginx
     - docker build -f Dockerfile-nginx --tag $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST --tag $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG .
 
-    - docker push $IMAGE_NAME:$NGINX_VERSION-$TAG
-    - docker push $IMAGE_NAME:$NGINX_VERSION-LATEST
     - docker push $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG
     - docker push $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
 
@@ -645,8 +643,6 @@ release_varnish:
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/varnish
     - docker build -f Dockerfile-varnish --tag $IMAGE_NAME_GCP:LATEST --tag $IMAGE_NAME_GCP:$TAG .
 
-    - docker push $IMAGE_NAME:LATEST
-    - docker push $IMAGE_NAME:$TAG
     - docker push $IMAGE_NAME_GCP:LATEST
     - docker push $IMAGE_NAME_GCP:$TAG
 
