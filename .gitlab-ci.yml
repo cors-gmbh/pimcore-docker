@@ -575,7 +575,7 @@ release_php_blackfire:
     - FROM_IMAGE_NAME=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
 
-    - docker build -f Dockerfile-blackfire --tag --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
+    - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
     - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
