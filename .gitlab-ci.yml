@@ -89,7 +89,7 @@ variables:
           PHP_VERSION: [ '8.1', '8.2' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.17' ]
+          ALPINE: [ '3.17', '3.18' ]
   tags:
     - cors-${ARCH}
 
