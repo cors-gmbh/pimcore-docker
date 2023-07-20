@@ -21,6 +21,7 @@ variables:
   GCP_URL: europe-west3-docker.pkg.dev
   TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
   REGISTRY_URL: $GCP_URL/cors-wolke/cors/docker
+  ADDITIONAL_BRANCH: any-additional-branch-to-build
 
 test:
   stage: test
@@ -103,7 +104,7 @@ build_and_push:
     - if: $CI_COMMIT_REF_NAME == $STAGING_BRANCH
       variables:
         APP_ENV: staging
-    - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH
+    - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH || $CI_COMMIT_REF_NAME == $ADDITIONAL_BRANCH
       when: on_success
   before_script:
     - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
@@ -175,7 +176,7 @@ update_manifest:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
-    - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH
+    - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH || $CI_COMMIT_REF_NAME == $ADDITIONAL_BRANCH
       when: on_success
   variables:
     CD_GIT_REPOSITORY: git.e-conomix.at/cors/$CD_CHART_REPO.git
