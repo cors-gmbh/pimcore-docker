@@ -209,6 +209,7 @@ build_php:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
         --context $CI_PROJECT_DIR
         --cache=true
@@ -233,6 +234,7 @@ build_php_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
         --context $CI_PROJECT_DIR
         --cache true
@@ -257,6 +259,7 @@ build_php_blackfire:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -281,6 +284,7 @@ build_supervisord:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -306,6 +310,7 @@ build_nginx:
     - docker push "$IMAGE_NAME:$NGINX_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$NGINX_VERSION-LATEST"
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -322,6 +327,7 @@ build_varnish:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
     - IMAGE_NAME_GCP=$CI_REGISTRY_IMAGE/varnish
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -421,6 +427,7 @@ release_php:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -451,6 +458,7 @@ release_php_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -480,6 +488,7 @@ release_php_blackfire:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -509,6 +518,7 @@ release_supervisord:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -534,6 +544,7 @@ release_nginx:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/nginx
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/nginx
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
@@ -555,6 +566,7 @@ release_varnish:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
     - IMAGE_NAME_GCP=$CI_REGISTRY_IMAGE/varnish
 
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:LATEST
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --cache true
