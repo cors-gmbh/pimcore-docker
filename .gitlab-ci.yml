@@ -206,8 +206,8 @@ build_php:
   except:
     - tags
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
 
     - /kaniko/executor
         --context $CI_PROJECT_DIR
@@ -228,10 +228,10 @@ build_php_debug:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
 
     - /kaniko/executor
         --context $CI_PROJECT_DIR
@@ -252,10 +252,10 @@ build_php_blackfire:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
@@ -276,10 +276,10 @@ build_supervisord:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
@@ -298,8 +298,8 @@ build_nginx:
   except:
     - tags
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/nginx
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/nginx
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/nginx
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/nginx
 
     - docker pull $IMAGE_NAME:$NGINX_VERSION-LATEST || true
     - docker build --cache-from $IMAGE_NAME:$NGINX_VERSION-LATEST -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST .
@@ -418,8 +418,8 @@ release_php:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
@@ -446,10 +446,10 @@ release_php_debug:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE-debug
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
@@ -475,10 +475,10 @@ release_php_blackfire:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-fpm-blackfire
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
@@ -504,10 +504,10 @@ release_supervisord:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-supervisord
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
@@ -531,8 +531,8 @@ release_nginx:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/nginx
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/nginx
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/nginx
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/nginx
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
