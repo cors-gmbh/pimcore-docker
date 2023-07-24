@@ -209,7 +209,7 @@ build_php:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/${ARCH}64/php-alpine-$ALPINE-$PHP_TYPE
 
-    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+    - /kaniko/warmer --image $IMAGE_NAME_GCP:$PHP_VERSION-LATEST || true
     - /kaniko/executor
         --context $CI_PROJECT_DIR
         --use-new-run
