@@ -47,6 +47,7 @@ variables:
       command: ["--mtu=1450"]
   image: docker:stable
   before_script:
+    - docker info
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
     - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
   tags:
@@ -66,6 +67,7 @@ variables:
     - IMAGE_NAME_AMD_GCP
     - IMAGE_NAME_GCP
   script:
+    - sleep 300
     - CI_MANIFEST_LIST="$IMAGE_NAME_AMD $IMAGE_NAME_ARM"
     - CI_MANIFEST_LIST_GCP="$IMAGE_NAME_AMD_GCP $IMAGE_NAME_ARM_GCP"
 
