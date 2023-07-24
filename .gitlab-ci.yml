@@ -213,6 +213,7 @@ build_php:
     - /kaniko/executor
         --context $CI_PROJECT_DIR
         --use-new-run
+        --snapshot-mode=redo
         --cache=true
         --dockerfile "Dockerfile"
         --target=cors_php_$PHP_TYPE 
@@ -239,6 +240,7 @@ build_php_debug:
     - /kaniko/executor
         --context $CI_PROJECT_DIR
         --use-new-run
+        --snapshot-mode=redo
         --cache true
         --dockerfile "Dockerfile-debug"
         --target=cors_php_$PHP_TYPE
@@ -265,6 +267,7 @@ build_php_blackfire:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-blackfire"
       --target=cors_php_$PHP_TYPE
@@ -291,6 +294,7 @@ build_supervisord:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-supervisord"
       --target=cors_php_$PHP_TYPE
@@ -318,6 +322,7 @@ build_nginx:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-nginx"
       --destination $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
@@ -336,6 +341,7 @@ build_varnish:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-varnish"
       --destination $IMAGE_NAME_GCP:LATEST
@@ -437,6 +443,7 @@ release_php:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile"
       --target=cors_php_$PHP_TYPE
@@ -469,6 +476,7 @@ release_php_debug:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-debug"
       --target=cors_php_$PHP_TYPE
@@ -500,6 +508,7 @@ release_php_blackfire:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-blackfire"
       --target=cors_php_$PHP_TYPE
@@ -531,6 +540,7 @@ release_supervisord:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-sueprvisord"
       --target=cors_php_$PHP_TYPE
@@ -558,6 +568,7 @@ release_nginx:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-nginx"
       --destination $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
@@ -581,6 +592,7 @@ release_varnish:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache true
       --dockerfile "Dockerfile-varnish"
       --destination $IMAGE_NAME_GCP:LATEST

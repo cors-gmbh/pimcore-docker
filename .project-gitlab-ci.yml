@@ -74,6 +74,7 @@ build_and_push:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php
@@ -90,6 +91,7 @@ build_and_push:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php_blackfire
@@ -106,6 +108,7 @@ build_and_push:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php_supervisord
@@ -122,6 +125,7 @@ build_and_push:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php_cli
@@ -138,6 +142,7 @@ build_and_push:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
       --use-new-run
+      --snapshot-mode=redo
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_nginx
@@ -155,6 +160,7 @@ build_and_push:
           /kaniko/executor
             --context $CI_PROJECT_DIR
             --use-new-run
+            --snapshot-mode=redo
             --cache=true
             --dockerfile "Dockerfile"
             --target=cors_varnish
