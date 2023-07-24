@@ -73,6 +73,7 @@ build_and_push:
   script:
     - /kaniko/executor
       --context $CI_PROJECT_DIR
+      --use-new-run
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php
@@ -88,6 +89,7 @@ build_and_push:
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
+      --use-new-run
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php_blackfire
@@ -103,6 +105,7 @@ build_and_push:
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
+      --use-new-run
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php_supervisord
@@ -118,6 +121,7 @@ build_and_push:
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
+      --use-new-run
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_php_cli
@@ -133,6 +137,7 @@ build_and_push:
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
+      --use-new-run
       --cache=true
       --dockerfile "Dockerfile"
       --target=cors_nginx
@@ -149,6 +154,7 @@ build_and_push:
     - if [ "$VARNISH" = "true" ] ; then
           /kaniko/executor
             --context $CI_PROJECT_DIR
+            --use-new-run
             --cache=true
             --dockerfile "Dockerfile"
             --target=cors_varnish
