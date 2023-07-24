@@ -217,8 +217,8 @@ build_php:
         --build-arg PHP_VERSION=$PHP_VERSION 
         --build-arg PHP_TYPE=$PHP_TYPE
         --build-arg ALPINE_VERSION=$ALPINE
-        --destination $IMAGE_NAME:$PHP_VERSION-LATEST 
         --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+        --destination $IMAGE_NAME:$PHP_VERSION-LATEST
 
 build_php_debug:
   extends: .build_php_debug
@@ -241,8 +241,8 @@ build_php_debug:
         --build-arg FROM=$FROM_IMAGE_NAME 
         --build-arg PHP_VERSION=$PHP_VERSION  
         --build-arg ALPINE_VERSION=$ALPINE
-        --destination $IMAGE_NAME:$PHP_VERSION-LATEST
         --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+        --destination $IMAGE_NAME:$PHP_VERSION-LATEST
 
 build_php_blackfire:
   extends: .build_php_blackfire
@@ -265,8 +265,8 @@ build_php_blackfire:
       --build-arg FROM=$FROM_IMAGE_NAME
       --build-arg PHP_VERSION=$PHP_VERSION
       --build-arg ALPINE_VERSION=$ALPINE
-      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
 
 build_supervisord:
   extends: .build_supervisord
@@ -289,8 +289,8 @@ build_supervisord:
       --build-arg FROM=$FROM_IMAGE_NAME
       --build-arg PHP_VERSION=$PHP_VERSION
       --build-arg ALPINE_VERSION=$ALPINE
-      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
 
 build_nginx:
   extends: .build_nginx
@@ -310,8 +310,8 @@ build_nginx:
       --context $CI_PROJECT_DIR
       --cache true
       --dockerfile "Dockerfile-nginx"
-      --destination $IMAGE_NAME:$NGINX_VERSION-LATEST
       --destination $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
+      --destination $IMAGE_NAME:$NGINX_VERSION-LATEST
 
 build_varnish:
   extends: .build
@@ -326,8 +326,8 @@ build_varnish:
       --context $CI_PROJECT_DIR
       --cache true
       --dockerfile "Dockerfile-varnish"
-      --destination $IMAGE_NAME:LATEST
       --destination $IMAGE_NAME_GCP:LATEST
+      --destination $IMAGE_NAME:LATEST
 
 manifest_php:
   extends:
@@ -429,10 +429,10 @@ release_php:
       --build-arg FROM=$FROM_IMAGE_NAME
       --build-arg PHP_VERSION=$PHP_VERSION
       --build-arg ALPINE_VERSION=$ALPINE
-      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
-      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
 
 
 release_php_debug:
@@ -459,10 +459,10 @@ release_php_debug:
       --build-arg FROM=$FROM_IMAGE_NAME
       --build-arg PHP_VERSION=$PHP_VERSION
       --build-arg ALPINE_VERSION=$ALPINE
-      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
-      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
 
 release_php_blackfire:
   extends: .build_php_blackfire
@@ -488,10 +488,10 @@ release_php_blackfire:
       --build-arg FROM=$FROM_IMAGE_NAME
       --build-arg PHP_VERSION=$PHP_VERSION
       --build-arg ALPINE_VERSION=$ALPINE
-      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
-      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
 
 release_supervisord:
   extends: .build_supervisord
@@ -517,10 +517,10 @@ release_supervisord:
       --build-arg FROM=$FROM_IMAGE_NAME
       --build-arg PHP_VERSION=$PHP_VERSION
       --build-arg ALPINE_VERSION=$ALPINE
-      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
-      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
       --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
 
 release_nginx:
   extends: .build_nginx
@@ -538,10 +538,10 @@ release_nginx:
       --context $CI_PROJECT_DIR
       --cache true
       --dockerfile "Dockerfile-nginx"
+      --destination $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG
       --destination $IMAGE_NAME:$NGINX_VERSION-$TAG
       --destination $IMAGE_NAME:$NGINX_VERSION-LATEST
-      --destination $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG
-      --destination $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
 
 release_varnish:
   extends: .build
@@ -559,10 +559,10 @@ release_varnish:
       --context $CI_PROJECT_DIR
       --cache true
       --dockerfile "Dockerfile-varnish"
-      --destination $IMAGE_NAME:LATEST
-      --destination $IMAGE_NAME:$TAG
       --destination $IMAGE_NAME_GCP:LATEST
       --destination $IMAGE_NAME_GCP:$TAG
+      --destination $IMAGE_NAME:LATEST
+      --destination $IMAGE_NAME:$TAG
 
 release_manifest_php:
   extends:
