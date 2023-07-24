@@ -157,6 +157,7 @@ build_and_push:
       --build-arg NGINX_VERSION="$NGINX_VERSION" 
       --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
       --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine-fpm/cache
       --destination $GCP_REGISTRY_IMAGE/nginx:$TAG
       --destination $GCP_REGISTRY_IMAGE/nginx:LATEST-$CI_COMMIT_REF_NAME
 
