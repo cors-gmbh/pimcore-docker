@@ -36,7 +36,6 @@ variables:
     entrypoint: [""]
   before_script:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64 | tr -d '\n')\"}, \"https://$GCP_URL\":{\"auth\":\"$(echo -n "_json_key":$(base64 -d $GOOGLE_ARTIFACT_REGISTRY) | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
-    - cat /kaniko/.docker/config.json
   tags:
     - cors
 

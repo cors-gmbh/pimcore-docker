@@ -9,10 +9,10 @@ variables:
   APP_ENV: staging
   PROD_BRANCH: master
   STAGING_BRANCH: staging
-  DOCKER_BASE_VERSION: "2.2.0"
-  PHP_VERSION: "8.0"
+  DOCKER_BASE_VERSION: "4.0.0"
+  PHP_VERSION: "8.2"
   NGINX_VERSION: "1.21"
-  ALPINE_VERSION: "3.16"
+  ALPINE_VERSION: "3.18"
   VARNISH: "false"
   TEST_PHPSTAN: "false"
   TEST_LINT_TWIG: "true"
@@ -48,53 +48,11 @@ test:
   tags:
     - cors
 
-#.scan:
-#  image:
-#    name: docker.io/aquasec/trivy:latest
-#    entrypoint: [ "" ]
-#  stage: scan
-#  needs:
-#    - build_and_push
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-#      when: never
-#    - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH
-#      when: on_success
-#  variables:
-#    GIT_STRATEGY: none
-#    TRIVY_USERNAME: "$CI_REGISTRY_USER"
-#    TRIVY_PASSWORD: "$CI_REGISTRY_PASSWORD"
-#    TRIVY_AUTH_URL: "$CI_REGISTRY"
-#    TRIVY_NO_PROGRESS: "true"
-#    TRIVY_CACHE_DIR: ".trivycache/"
-#  allow_failure: true
-#  before_script:
-#    - echo "scan image"
-#  after_script:
-#    - echo "scan complete"
-#  script:
-#    - trivy --version
-#    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-#    - time trivy image --clear-cache
-#    # update vulnerabilities db
-#    - time trivy image --download-db-only
-#    # Prints full report
-#    - time trivy image --exit-code 0 --timeout 15m0s "$FULL_IMAGE_NAME"
-#    # Fail on critical vulnerabilities
-#    - time trivy image --exit-code 1 --severity CRITICAL --timeout 15m0s "$FULL_IMAGE_NAME"
-#  cache:
-#    paths:
-#      - .trivycache/
-#  artifacts:
-#    when: always
-#    reports:
-#      container_scanning: gl-container-scanning-report.json
-#  tags:
-#    - cors
-
 build_and_push:
   stage: build
-  image: docker:stable
+  image:
+    name: gcr.io/kaniko-project/executor:v1.12.1-debug
+    entrypoint: [ "" ]
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       when: never
@@ -110,66 +68,101 @@ build_and_push:
     - if: $CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH || $CI_COMMIT_REF_NAME == $ADDITIONAL_BRANCH
       when: on_success
   before_script:
-    - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
-    - export GCP_REGISTRY_IMAGE=$(echo "$GCP_URL/cors-wolke/$CI_PROJECT_PATH" | tr '[:upper:]' '[:lower:]')
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64 | tr -d '\n')\"}, \"https://$GCP_URL\":{\"auth\":\"$(echo -n "_json_key":$(base64 -d $GOOGLE_ARTIFACT_REGISTRY) | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
   script:
-    - printenv
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG           --target=cors_php             --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG --target=cors_php_blackfire   --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-supervisord:$TAG   --target=cors_php_supervisord --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/php-alpine-cli:$TAG           --target=cors_php_cli         --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
-    - docker build . --tag $GCP_REGISTRY_IMAGE/nginx:$TAG                    --target=cors_nginx           --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"
-    - if [ "$VARNISH" = "true" ] ; then docker build . --tag $GCP_REGISTRY_IMAGE/varnish:$TAG --target=cors_varnish --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" --build-arg APP_ENV="$APP_ENV" --build-arg PHP_VERSION="$PHP_VERSION" --build-arg NGINX_VERSION="$NGINX_VERSION" --build-arg ALPINE_VERSION="$ALPINE_VERSION" --build-arg REGISTRY_URL="$REGISTRY_URL"; fi
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache=true
+      --dockerfile "Dockerfile"
+      --target=cors_php
+      --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" 
+      --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" 
+      --build-arg APP_ENV="$APP_ENV" 
+      --build-arg PHP_VERSION="$PHP_VERSION" 
+      --build-arg NGINX_VERSION="$NGINX_VERSION" 
+      --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
+      --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm:LATEST-$CI_COMMIT_REF_NAME
 
-    - docker push $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
-    - docker push $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
-    - docker push $GCP_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
-    - docker push $GCP_REGISTRY_IMAGE/php-alpine-cli:$TAG
-    - docker push $GCP_REGISTRY_IMAGE/nginx:$TAG
-    - if [ "$VARNISH" = "true" ] ; then docker push $GCP_REGISTRY_IMAGE/varnish:$TAG; fi
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache=true
+      --dockerfile "Dockerfile"
+      --target=cors_php_blackfire
+      --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" 
+      --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" 
+      --build-arg APP_ENV="$APP_ENV" 
+      --build-arg PHP_VERSION="$PHP_VERSION" 
+      --build-arg NGINX_VERSION="$NGINX_VERSION" 
+      --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
+      --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:LATEST-$CI_COMMIT_REF_NAME
+
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache=true
+      --dockerfile "Dockerfile"
+      --target=cors_php_supervisord
+      --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" 
+      --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" 
+      --build-arg APP_ENV="$APP_ENV" 
+      --build-arg PHP_VERSION="$PHP_VERSION" 
+      --build-arg NGINX_VERSION="$NGINX_VERSION" 
+      --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
+      --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-supervisord:LATEST-$CI_COMMIT_REF_NAME
+
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache=true
+      --dockerfile "Dockerfile"
+      --target=cors_php_cli
+      --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" 
+      --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" 
+      --build-arg APP_ENV="$APP_ENV" 
+      --build-arg PHP_VERSION="$PHP_VERSION" 
+      --build-arg NGINX_VERSION="$NGINX_VERSION" 
+      --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
+      --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-cli:$TAG
+      --destination $GCP_REGISTRY_IMAGE/php-alpine-cli:LATEST-$CI_COMMIT_REF_NAME
+
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache=true
+      --dockerfile "Dockerfile"
+      --target=cors_nginx
+      --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" 
+      --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" 
+      --build-arg APP_ENV="$APP_ENV" 
+      --build-arg PHP_VERSION="$PHP_VERSION" 
+      --build-arg NGINX_VERSION="$NGINX_VERSION" 
+      --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
+      --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --destination $GCP_REGISTRY_IMAGE/nginx:$TAG
+      --destination $GCP_REGISTRY_IMAGE/nginx:LATEST-$CI_COMMIT_REF_NAME
+
+    - if [ "$VARNISH" = "true" ] ; then
+          /kaniko/executor
+            --context $CI_PROJECT_DIR
+            --cache=true
+            --dockerfile "Dockerfile"
+            --target=cors_varnish
+            --build-arg DOCKER_BASE_VERSION="$DOCKER_BASE_VERSION" 
+            --build-arg COMPOSER_AUTH="$COMPOSER_AUTH" 
+            --build-arg APP_ENV="$APP_ENV" 
+            --build-arg PHP_VERSION="$PHP_VERSION"
+            --build-arg NGINX_VERSION="$NGINX_VERSION"
+            --build-arg ALPINE_VERSION="$ALPINE_VERSION"
+            --build-arg REGISTRY_URL="$REGISTRY_URL"
+            --destination $GCP_REGISTRY_IMAGE/varnish:$TAG
+            --destination $GCP_REGISTRY_IMAGE/varnish:LATEST-$CI_COMMIT_REF_NAME
+      fi
   tags:
     - cors
-
-#scan_php:
-#  extends:
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-fpm:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
-#
-#scan_php_blackfire:
-#  extends:
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
-#
-#scan_php_supervisord:
-#  extends:
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-supervisord:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
-#
-#scan_php_cli:
-#  extends:
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-cli:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
-#
-#scan_nginx:
-#  extends:
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/nginx:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
-#
-#scan_varnish:
-#  extends:
-#    - .scan
-#  rules:
-#    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-#      when: never
-#    - if: ($CI_COMMIT_REF_NAME == $PROD_BRANCH || $CI_COMMIT_REF_NAME == $STAGING_BRANCH) && $VARNISH == "true"
-#      when: on_success
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/varnish:$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
 
 update_manifest:
   stage: manifest
