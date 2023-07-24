@@ -37,11 +37,14 @@ stages:
 variables:
   GCP_URL: europe-west3-docker.pkg.dev
   GCP_REGISTRY_IMAGE: $GCP_URL/cors-wolke/$CI_PROJECT_PATH
-
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://localhost:2375
 
 .build:
-  image: docker:dind
-  command: ["--mtu=1450"]
+  services:
+    - name: docker:dind
+      command: [ "--mtu 1460" ]
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
     - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
@@ -50,8 +53,9 @@ variables:
 
 .manifest:
   extends: .build
-  image: docker:dind
-  command: ["--mtu=1450"]
+  services:
+    - name: docker:dind
+      command: [ "--mtu 1460" ]
   variables:
     - IMAGE_NAME_ARM
     - IMAGE_NAME_AMD
