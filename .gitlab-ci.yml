@@ -3,36 +3,25 @@ stages:
   - build_php_debug
   - build_php_blackfire
   - build_supervisord
-#  - build_supervisord_debug
   - build_nginx
   - build_varnish
   - manifest_php
   - manifest_php_debug
   - manifest_php_blackfire
   - manifest_supervisord
-#  - manifest_supervisord_debug
   - manifest_nginx
   - manifest_varnish
   - release_php
   - release_php_debug
   - release_php_blackfire
   - release_supervisord
-#  - release_supervisord_debug
   - release_nginx
   - release_varnish
   - release_manifest_php
   - release_manifest_php_debug
   - release_manifest_php_blackfire
   - release_manifest_supervisord
-#  - release_manifest_supervisord_debug
   - release_manifest_nginx
-#  - scan_php
-#  - scan_php_debug
-#  - scan_php_blackfire
-#  - scan_supervisord
-#  - scan_supervisord_debug
-#  - scan_nginx
-#  - scan_varnish
 
 variables:
   GCP_URL: europe-west3-docker.pkg.dev
@@ -40,6 +29,13 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
+
+.build_kaniko:
+  image:
+    name: gcr.io/kaniko-project/executor:v1.12.1-debug
+    entrypoint: [""]
+  script:
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64 | tr -d '\n')\"}, \"$GCP_URL\":{\"auth\":\"$(echo -n ${GOOGLE_ARTIFACT_REGISTRY} | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
 
 .build:
   services:
@@ -55,52 +51,45 @@ variables:
 
 .manifest:
   extends: .build
-  image: docker:stable
-  services:
-    - name: docker:dind
-      command: ["--mtu=1450"]
+  image:
+    name: mplatform/manifest-tool:alpine
   variables:
-    - IMAGE_NAME_ARM
-    - IMAGE_NAME_AMD
+    - TEMPLATE
     - IMAGE_NAME
-    - IMAGE_NAME_ARM_GCP
-    - IMAGE_NAME_AMD_GCP
-    - IMAGE_NAME_GCP
+    - IMAGE_NAME_GC
   script:
-    - until docker info; do sleep 1; done
-    - CI_MANIFEST_LIST="$IMAGE_NAME_AMD $IMAGE_NAME_ARM"
-    - CI_MANIFEST_LIST_GCP="$IMAGE_NAME_AMD_GCP $IMAGE_NAME_ARM_GCP"
+    - >-
+      manifest-tool --docker-cfg=/kaniko/.docker/config.json push from-args
+        --platforms linux/amd64,linux/arm64
+        --template $TEMPLATE
+        --target ${IMAGE_NAME}
 
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - docker manifest create --amend $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
-    - docker manifest create --amend $IMAGE_NAME_GCP $CI_MANIFEST_LIST_GCP && docker manifest push $IMAGE_NAME_GCP
+    - >-
+      manifest-tool --docker-cfg=/kaniko/.docker/config.json push from-args
+        --platforms linux/amd64,linux/arm64
+        --template $TEMPLATE
+        --target ${IMAGE_NAME_GCP}
 
 .manifest_release:
   extends: .manifest
   variables:
-    - IMAGE_NAME_ARM
-    - IMAGE_NAME_ARM_TAG
-    - IMAGE_NAME_AMD
-    - IMAGE_NAME_AMD_TAG
+    - TEMPLATE
     - IMAGE_NAME
-    - IMAGE_NAME_TAG
-    - IMAGE_NAME_ARM_GCP
-    - IMAGE_NAME_ARM_TAG_GCP
-    - IMAGE_NAME_AMD_GCP
-    - IMAGE_NAME_AMD_TAG_GCP
     - IMAGE_NAME_GCP
-    - IMAGE_NAME_TAG_GCP
   script:
-    - CI_MANIFEST_LIST="$IMAGE_NAME_AMD $IMAGE_NAME_ARM"
-    - CI_MANIFEST_LIST_GCP="$IMAGE_NAME_AMD_GCP $IMAGE_NAME_ARM_GCP"
-    - CI_MANIFEST_LIST_TAG="$IMAGE_NAME_AMD_TAG $IMAGE_NAME_ARM_TAG"
-    - CI_MANIFEST_LIST_TAG_GCP="$IMAGE_NAME_AMD_TAG_GCP $IMAGE_NAME_ARM_TAG_GCP"
+    - >-
+      manifest-tool --docker-cfg=/kaniko/.docker/config.json push from-args
+        --platforms linux/amd64,linux/arm64
+        --template $TEMPLATE
+        --target ${IMAGE_NAME}
+        --tags $CI_COMMIT_REF_NAME
 
-    - export DOCKER_CLI_EXPERIMENTAL=enabled
-    - docker manifest create --amend $IMAGE_NAME $CI_MANIFEST_LIST && docker manifest push $IMAGE_NAME
-    - docker manifest create --amend $IMAGE_NAME_GCP $CI_MANIFEST_LIST_GCP && docker manifest push $IMAGE_NAME_GCP
-    - docker manifest create --amend $IMAGE_NAME_TAG $CI_MANIFEST_LIST_TAG && docker manifest push $IMAGE_NAME_TAG
-    - docker manifest create --amend $IMAGE_NAME_TAG_GCP $CI_MANIFEST_LIST_TAG_GCP && docker manifest push $IMAGE_NAME_TAG_GCP
+    - >-
+      manifest-tool --docker-cfg=/kaniko/.docker/config.json push from-args
+        --platforms linux/amd64,linux/arm64
+        --template $TEMPLATE
+        --target ${IMAGE_NAME_GCP}
+        --tags $CI_COMMIT_REF_NAME
 
 .build_php:
   extends: .build
@@ -206,28 +195,6 @@ variables:
       - PHP_VERSION: [ '8.1', '8.2' ]
         ALPINE: [ '3.17', '3.18' ]
 
-#.build_supervisord_debug:
-#  extends: .build
-#  parallel:
-#    matrix:
-#      - ARCH: ['amd', 'arm']
-#        PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-#        ALPINE: [ '3.16' ]
-#      - ARCH: ['amd', 'arm']
-#        PHP_VERSION: [ '8.1', '8.2' ]
-#        ALPINE: [ '3.17', '3.18' ]
-#  tags:
-#    - cors-${ARCH}
-#
-#.manifest_supervisord_debug:
-#  extends: .build
-#  parallel:
-#    matrix:
-#      - PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-#        ALPINE: [ '3.16' ]
-#      - PHP_VERSION: [ '8.1', '8.2' ]
-#        ALPINE: [ '3.17', '3.18' ]
-
 .build_nginx:
   extends: .build
   parallel:
@@ -243,76 +210,25 @@ variables:
     matrix:
       - NGINX_VERSION: [ '1.21', '1.22' ]
 
-#.scan:
-#  image:
-#    name: docker.io/aquasec/trivy:latest
-#    entrypoint: [ "" ]
-#  variables:
-#    GIT_STRATEGY: none
-#    TRIVY_NO_PROGRESS: "true"
-#    TRIVY_CACHE_DIR: ".trivycache/"
-#  allow_failure: true
-#  before_script:
-#    - mkdir -p ~/.docker
-#    - export GCR_AUTH=$(echo "_json_key:$GOOGLE_ARTIFACT_REGISTRY" | tr -d '[:space:]')
-#    - |
-#      cat << EOF > ~/.docker/config.json
-#      {"auths":
-#        {
-#          "europe-west3-docker.pkg.dev":{"auth":"$GCR_AUTH"}
-#        }
-#      }
-#      EOF
-#  after_script:
-#    - echo "scan complete"
-#  script:
-#    - trivy --version
-#    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-#    - time trivy image --clear-cache
-#    # update vulnerabilities db
-#    - time trivy image --download-db-only
-#    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
-#    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
-#      --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
-#    # Prints full report
-#    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
-#    # Fail on critical vulnerabilities
-#    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
-#  cache:
-#    paths:
-#      - .trivycache/
-#  artifacts:
-#    when: always
-#    reports:
-#      container_scanning: gl-container-scanning-report.json
-#  tags:
-#    - cors
-
 build_php:
   extends: .build_php
   stage: build_php
   except:
     - tags
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --build-arg ALPINE_VERSION=$ALPINE .
-    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
-    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_php:
-#  stage: scan_php
-#  needs:
-#    - manifest_php
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_php
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
+    - /kaniko/executor
+        --context $CI_PROJECT_DIR
+        --cache true
+        --dockerfile "Dockerfile"
+        --target=cors_php_$PHP_TYPE 
+        --build-arg PHP_VERSION=$PHP_VERSION 
+        --build-arg PHP_TYPE=$PHP_TYPE
+        --build-arg ALPINE_VERSION=$ALPINE
+        --destination $IMAGE_NAME:$PHP_VERSION-LATEST 
+        --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
 build_php_debug:
   extends: .build_php_debug
@@ -322,27 +238,21 @@ build_php_debug:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
-    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
-    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_php_debug:
-#  stage: scan_php_debug
-#  needs:
-#    - manifest_php_debug
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_php_debug
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
+    - /kaniko/executor
+        --context $CI_PROJECT_DIR
+        --cache true
+        --dockerfile "Dockerfile-debug"
+        --target=cors_php_$PHP_TYPE
+        --build-arg FROM=$FROM_IMAGE_NAME 
+        --build-arg PHP_VERSION=$PHP_VERSION  
+        --build-arg ALPINE_VERSION=$ALPINE
+        --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+        --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
 build_php_blackfire:
   extends: .build_php_blackfire
@@ -352,27 +262,21 @@ build_php_blackfire:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
-    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
-    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_php_blackfire:
-#  stage: scan_php_blackfire
-#  needs:
-#    - manifest_php_blackfire
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_php_blackfire
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-blackfire"
+      --target=cors_php_$PHP_TYPE
+      --build-arg FROM=$FROM_IMAGE_NAME
+      --build-arg PHP_VERSION=$PHP_VERSION
+      --build-arg ALPINE_VERSION=$ALPINE
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
 build_supervisord:
   extends: .build_supervisord
@@ -382,56 +286,21 @@ build_supervisord:
   needs:
     - build_php
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
-    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
-    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_supervisord:
-#  stage: scan_supervisord
-#  needs:
-#    - manifest_supervisord
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_supervisord
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-
-#build_supervisord_debug:
-#  extends: .build_supervisord_debug
-#  stage: build_supervisord_debug
-#  except:
-#    - tags
-#  needs:
-#    - build_supervisord
-#  script:
-#    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
-#
-#    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#
-#    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
-#    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
-#    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_supervisord_debug:
-#  stage: scan_supervisord_debug
-#  needs:
-#    - manifest_supervisord_debug
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_supervisord_debug
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-supervisord"
+      --target=cors_php_$PHP_TYPE
+      --build-arg FROM=$FROM_IMAGE_NAME
+      --build-arg PHP_VERSION=$PHP_VERSION
+      --build-arg ALPINE_VERSION=$ALPINE
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
 build_nginx:
   extends: .build_nginx
@@ -439,25 +308,20 @@ build_nginx:
   except:
     - tags
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/nginx
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/nginx
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/nginx
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/nginx
 
     - docker pull $IMAGE_NAME:$NGINX_VERSION-LATEST || true
     - docker build --cache-from $IMAGE_NAME:$NGINX_VERSION-LATEST -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST .
     - docker push "$IMAGE_NAME:$NGINX_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$NGINX_VERSION-LATEST"
 
-#scan_nginx:
-#  stage: scan_nginx
-#  needs:
-#    - manifest_nginx
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_nginx
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-nginx"
+      --destination $IMAGE_NAME:$NGINX_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
 
 build_varnish:
   extends: .build
@@ -468,21 +332,12 @@ build_varnish:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
     - IMAGE_NAME_GCP=$CI_REGISTRY_IMAGE/varnish
 
-    - docker pull $IMAGE_NAME:LATEST || true
-    - docker build --cache-from $IMAGE_NAME:LATEST -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME_GCP:LATEST .
-    - docker push "$IMAGE_NAME:LATEST"
-    - docker push "$IMAGE_NAME_GCP:LATEST"
-
-#scan_varnish:
-#  stage: scan_varnish
-#  needs:
-#    - build_varnish
-#  except:
-#    - tags
-#  extends:
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/varnish:LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-varnish"
+      --destination $IMAGE_NAME:LATEST
+      --destination $IMAGE_NAME_GCP:LATEST
 
 manifest_php:
   extends:
@@ -494,12 +349,9 @@ manifest_php:
   except:
     - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
   tags:
     - cors
 
@@ -513,11 +365,9 @@ manifest_php_debug:
   except:
     - tags
   variables:
+    TEMAPLTE: $GCP_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
   tags:
     - cors
 
@@ -531,12 +381,9 @@ manifest_php_blackfire:
   except:
     - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
   tags:
     - cors
 
@@ -550,33 +397,11 @@ manifest_supervisord:
   except:
     - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
   tags:
     - cors
-
-#manifest_supervisord_debug:
-#  extends:
-#    - .manifest
-#    - .manifest_supervisord_debug
-#  stage: manifest_supervisord_debug
-#  needs:
-#    - build_supervisord_debug
-#  except:
-#    - tags
-#  variables:
-#    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#  tags:
-#    - cors
 
 manifest_nginx:
   extends:
@@ -588,12 +413,9 @@ manifest_nginx:
   except:
     - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
   tags:
     - cors
 
@@ -606,16 +428,22 @@ release_php:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE  --build-arg ALPINE_VERSION=$ALPINE .
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile"
+      --target=cors_php_$PHP_TYPE
+      --build-arg FROM=$FROM_IMAGE_NAME
+      --build-arg PHP_VERSION=$PHP_VERSION
+      --build-arg ALPINE_VERSION=$ALPINE
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
 
-    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
 release_php_debug:
   extends: .build_php_debug
@@ -628,18 +456,23 @@ release_php_debug:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-$PHP_TYPE-debug
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
-
-    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-debug"
+      --target=cors_php_$PHP_TYPE
+      --build-arg FROM=$FROM_IMAGE_NAME
+      --build-arg PHP_VERSION=$PHP_VERSION
+      --build-arg ALPINE_VERSION=$ALPINE
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
 
 release_php_blackfire:
   extends: .build_php_blackfire
@@ -652,18 +485,23 @@ release_php_blackfire:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-fpm-blackfire
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION .
-
-    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-blackfire"
+      --target=cors_php_$PHP_TYPE
+      --build-arg FROM=$FROM_IMAGE_NAME
+      --build-arg PHP_VERSION=$PHP_VERSION
+      --build-arg ALPINE_VERSION=$ALPINE
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
 
 release_supervisord:
   extends: .build_supervisord
@@ -676,39 +514,23 @@ release_supervisord:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
+    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-cli:$PHP_VERSION-LATEST
 
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/php-alpine-$ALPINE-supervisord
 
-    - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME .
-
-    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
-
-#release_supervisord_debug:
-#  extends: .build_supervisord_debug
-#  stage: release_supervisord_debug
-#  only:
-#    refs:
-#      - tags
-#  needs:
-#    - release_supervisord
-#  variables:
-#    TAG: $CI_COMMIT_REF_NAME
-#  script:
-#    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-#    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#
-#    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME .
-#    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-#    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-#    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
-#    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-sueprvisord"
+      --target=cors_php_$PHP_TYPE
+      --build-arg FROM=$FROM_IMAGE_NAME
+      --build-arg PHP_VERSION=$PHP_VERSION
+      --build-arg ALPINE_VERSION=$ALPINE
+      --destination $IMAGE_NAME:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME:$PHP_VERSION-$TAG
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
 
 release_nginx:
   extends: .build_nginx
@@ -719,16 +541,17 @@ release_nginx:
   variables:
     TAG: $CI_COMMIT_REF_NAME
   script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/nginx
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/nginx
+    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH64/nginx
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH64/nginx
 
-    - docker pull $IMAGE_NAME:$NGINX_VERSION-LATEST || true
-    - docker build --cache-from $IMAGE_NAME:$NGINX_VERSION-LATEST -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME:$NGINX_VERSION-$TAG --tag $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST --tag $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG .
-
-    - docker push $IMAGE_NAME:$NGINX_VERSION-$TAG
-    - docker push $IMAGE_NAME:$NGINX_VERSION-LATEST
-    - docker push $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG
-    - docker push $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-nginx"
+      --destination $IMAGE_NAME:$NGINX_VERSION-$TAG
+      --destination $IMAGE_NAME:$NGINX_VERSION-LATEST
+      --destination $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG
+      --destination $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
 
 release_varnish:
   extends: .build
@@ -742,13 +565,14 @@ release_varnish:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
     - IMAGE_NAME_GCP=$CI_REGISTRY_IMAGE/varnish
 
-    - docker pull $IMAGE_NAME:$TAG || true
-    - docker build --cache-from $IMAGE_NAME:LATEST -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME:$TAG --tag $IMAGE_NAME_GCP:LATEST --tag $IMAGE_NAME_GCP:$TAG .
-
-    - docker push $IMAGE_NAME:LATEST
-    - docker push $IMAGE_NAME:$TAG
-    - docker push $IMAGE_NAME_GCP:LATEST
-    - docker push $IMAGE_NAME_GCP:$TAG
+    - /kaniko/executor
+      --context $CI_PROJECT_DIR
+      --cache true
+      --dockerfile "Dockerfile-varnish"
+      --destination $IMAGE_NAME:LATEST
+      --destination $IMAGE_NAME:$TAG
+      --destination $IMAGE_NAME_GCP:LATEST
+      --destination $IMAGE_NAME_GCP:$TAG
 
 release_manifest_php:
   extends:
@@ -761,18 +585,9 @@ release_manifest_php:
     refs:
       - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-$CI_COMMIT_REF_NAME
   tags:
     - cors
 
@@ -787,18 +602,11 @@ release_manifest_php_debug:
     refs:
       - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
     IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
     IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-$ALPINE-alpine-$PHP_TYPE-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
   tags:
     - cors
 
@@ -813,18 +621,11 @@ release_manifest_php_blackfire:
     refs:
       - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
     IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-$CI_COMMIT_REF_NAME
     IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-$CI_COMMIT_REF_NAME
   tags:
     - cors
 
@@ -839,46 +640,13 @@ release_manifest_supervisord:
     refs:
       - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
     IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-$CI_COMMIT_REF_NAME
     IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-$CI_COMMIT_REF_NAME
   tags:
     - cors
-
-#release_manifest_supervisord_debug:
-#  extends:
-#    - .manifest_release
-#    - .manifest_supervisord_debug
-#  stage: release_manifest_supervisord_debug
-#  needs:
-#    - release_supervisord_debug
-#  only:
-#    refs:
-#      - tags
-#  variables:
-#    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#  tags:
-#    - cors
 
 release_manifest_nginx:
   extends:
@@ -891,17 +659,10 @@ release_manifest_nginx:
     refs:
       - tags
   variables:
+    TEMPLATE: $CI_REGISTRY_IMAGE/ARCH/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
     IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$CI_COMMIT_REF_NAME
     IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/nginx:$NGINX_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/nginx:$NGINX_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-LATEST
-    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/nginx:$NGINX_VERSION-$CI_COMMIT_REF_NAME
   tags:
     - cors
