@@ -45,6 +45,7 @@ variables:
   services:
     - name: docker:dind
       command: [ "--mtu 1460" ]
+  image: docker:stable
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
     - base64 -d $GOOGLE_ARTIFACT_REGISTRY | docker login -u _json_key --password-stdin https://$GCP_URL
@@ -53,6 +54,7 @@ variables:
 
 .manifest:
   extends: .build
+  image: docker:stable
   services:
     - name: docker:dind
       command: [ "--mtu 1460" ]
