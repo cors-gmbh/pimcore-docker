@@ -39,7 +39,7 @@ variables:
   GCP_REGISTRY_IMAGE: $GCP_URL/cors-wolke/$CI_PROJECT_PATH
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://localhost:2375
+  DOCKER_HOST: tcp://docker:2375
 
 .build:
   services:
