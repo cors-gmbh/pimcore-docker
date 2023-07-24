@@ -298,7 +298,7 @@ build_php:
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
 
     - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --build-arg ALPINE_VERSION=$ALPINE .
+    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
@@ -328,7 +328,7 @@ build_php_debug:
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
 
     - docker pull $IMAGE_NAME:$PHP_VERSION-LATEST || true
-    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
+    - docker build --cache-from $IMAGE_NAME:$PHP_VERSION-LATEST -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
