@@ -39,11 +39,12 @@ variables:
   GCP_REGISTRY_IMAGE: $GCP_URL/cors-wolke/$CI_PROJECT_PATH
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://localhost:2375
 
 .build:
   services:
     - name: docker:dind
-      command: [ "--mtu 1460" ]
+      command: ["--mtu 1460" ]
   image: docker:stable
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
