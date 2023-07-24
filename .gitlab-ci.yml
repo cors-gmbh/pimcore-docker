@@ -44,7 +44,7 @@ variables:
 .build:
   services:
     - name: docker:dind
-      command: ["--mtu 1460" ]
+      command: ["--mtu=1450"]
   image: docker:stable
   before_script:
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
@@ -57,7 +57,7 @@ variables:
   image: docker:stable
   services:
     - name: docker:dind
-      command: [ "--mtu 1460" ]
+      command: ["--mtu=1450"]
   variables:
     - IMAGE_NAME_ARM
     - IMAGE_NAME_AMD
