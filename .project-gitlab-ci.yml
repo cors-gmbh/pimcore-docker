@@ -85,6 +85,7 @@ build_and_push:
       --build-arg NGINX_VERSION="$NGINX_VERSION" 
       --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
       --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm:LATEST-$CI_COMMIT_REF_NAME
 
@@ -102,6 +103,7 @@ build_and_push:
       --build-arg NGINX_VERSION="$NGINX_VERSION" 
       --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
       --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:LATEST-$CI_COMMIT_REF_NAME
 
@@ -119,6 +121,7 @@ build_and_push:
       --build-arg NGINX_VERSION="$NGINX_VERSION" 
       --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
       --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-supervisord:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-supervisord:LATEST-$CI_COMMIT_REF_NAME
 
@@ -136,6 +139,7 @@ build_and_push:
       --build-arg NGINX_VERSION="$NGINX_VERSION" 
       --build-arg ALPINE_VERSION="$ALPINE_VERSION" 
       --build-arg REGISTRY_URL="$REGISTRY_URL"
+      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-cli:$TAG
       --destination $GCP_REGISTRY_IMAGE/php-alpine-cli:LATEST-$CI_COMMIT_REF_NAME
 
