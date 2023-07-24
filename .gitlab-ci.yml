@@ -211,7 +211,7 @@ build_php:
 
     - /kaniko/executor
         --context $CI_PROJECT_DIR
-        --cache true
+        --cache=true
         --dockerfile "Dockerfile"
         --target=cors_php_$PHP_TYPE 
         --build-arg PHP_VERSION=$PHP_VERSION 
