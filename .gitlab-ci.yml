@@ -713,7 +713,7 @@ release_varnish:
     TAG: $CI_COMMIT_REF_NAME
   script:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
-    - IMAGE_NAME_GCP=$CI_REGISTRY_IMAGE/varnish
+    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/varnish
     - docker build -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME:$TAG --tag $IMAGE_NAME_GCP:LATEST --tag $IMAGE_NAME_GCP:$TAG .
 
     - docker push $IMAGE_NAME:LATEST
