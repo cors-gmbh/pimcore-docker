@@ -40,7 +40,7 @@ test:
   before_script:
     - composer install
     - bin/console pimcore:build:classes
-    - bin/console cache:clear --env=debug
+    - bin/console cache:clear --env=dev
   script:
     - vendor/bin/ecs check src
     - if [ "$TEST_LINT_TWIG" = "true" ] ; then bin/console lint:twig templates; fi
