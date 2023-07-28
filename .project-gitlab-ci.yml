@@ -39,7 +39,7 @@ test:
       - vendor/
   before_script:
     - composer install
-    - bin/console pimcore:build:classes
+    - PIMCORE_DISABLE_CACHE=1 bin/console pimcore:build:classes
     - bin/console cache:clear --env=dev
   script:
     - vendor/bin/ecs check src
