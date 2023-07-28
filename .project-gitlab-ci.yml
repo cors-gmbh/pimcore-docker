@@ -34,12 +34,13 @@ test:
     DATABASE_PASSWORD: ""
     DATABASE_NAME: ""
     DATABASE_VERSION: "8.0.26"
+    APP_ENV: dev
   cache:
     paths:
       - vendor/
   before_script:
     - composer install
-    - PIMCORE_DISABLE_CACHE=1 bin/console pimcore:build:classes
+    - PIMCORE_DISABLE_CACHE=1 bin/console pimcore:build:classes --env=dev
     - bin/console cache:clear --env=dev
   script:
     - vendor/bin/ecs check src
