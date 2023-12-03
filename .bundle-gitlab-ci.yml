@@ -3,7 +3,6 @@ stages:
 
 variables:
   DOCKER_BASE_VERSION: "5.1.0"
-  PHP_VERSION: "8.0"
   TEST_PHPSTAN: "false"
   TEST_LINT_TWIG: "true"
   TEST_LINT_YAML: "true"
@@ -15,7 +14,7 @@ test:
   stage: test
   parallel:
     matrix:
-      - PHP: [ '8.1', '8.2' ]
+      - PHP_VERSION: [ '8.1', '8.2' ]
   image: $TEST_IMAGE:$PHP_VERSION-$DOCKER_BASE_VERSION
   variables:
     DATABASE_HOST: ""
