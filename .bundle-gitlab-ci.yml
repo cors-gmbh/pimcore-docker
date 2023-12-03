@@ -1,0 +1,40 @@
+stages:
+  - test
+
+variables:
+  DOCKER_BASE_VERSION: "5.1.0"
+  PHP_VERSION: "8.0"
+  TEST_PHPSTAN: "false"
+  TEST_LINT_TWIG: "true"
+  TEST_LINT_YAML: "true"
+  TEST_LINT_CONTAINER: "true"
+  TEST_PSALM: "true"
+  TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
+
+test:
+  stage: test
+  parallel:
+    matrix:
+      - PHP: [ '8.1', '8.2' ]
+  image: $TEST_IMAGE:$PHP_VERSION-$DOCKER_BASE_VERSION
+  variables:
+    DATABASE_HOST: ""
+    DATABASE_PORT: ""
+    DATABASE_USER: ""
+    DATABASE_PASSWORD: ""
+    DATABASE_NAME: ""
+    DATABASE_VERSION: "8.0.26"
+  cache:
+    paths:
+      - vendor/
+  before_script:
+    - composer install
+  script:
+    - vendor/bin/ecs check src
+    - if [ "$TEST_LINT_TWIG" = "true" ] ; then bin/console lint:twig templates; fi
+    - if [ "$TEST_LINT_YAML" = "true" ] ; then bin/console lint:yaml config; fi
+    - if [ "$TEST_LINT_CONTAINER" = "true" ] ; then bin/console lint:container; fi
+    - if [ "$TEST_PHPSTAN" = "true" ] ; then vendor/bin/phpstan analyse src; fi
+    - if [ "$TEST_PSALM" = "true" ] ; then vendor/bin/psalm src; fi
+  tags:
+    - cors

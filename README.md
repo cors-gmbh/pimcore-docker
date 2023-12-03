@@ -1,5 +1,18 @@
 # CORS Docker Images
 
+## Local Docker Build
+```bash
+docker build \
+  --pull \
+  --tag base \
+  --target=cors_php_fpm \
+  --build-arg PHP_VERSION=8.1 \
+  --build-arg PHP_TYPE=fpm \
+  --build-arg ALPINE_VERSION=3.18 \
+  --progress plain \
+  .
+```
+
 ## Project Kaniko Build
 Example is for ocay Project, used to test local builds with kaniko.
 
