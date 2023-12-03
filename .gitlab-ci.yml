@@ -3,21 +3,21 @@ stages:
   - build_php_debug
   - build_php_blackfire
   - build_supervisord
-  - build_supervisord_debug
+#  - build_supervisord_debug
   - build_nginx
   - build_varnish
   - manifest_php
   - manifest_php_debug
   - manifest_php_blackfire
   - manifest_supervisord
-  - manifest_supervisord_debug
+#  - manifest_supervisord_debug
   - manifest_nginx
   - manifest_varnish
   - release_php
   - release_php_debug
   - release_php_blackfire
   - release_supervisord
-  - release_supervisord_debug
+#  - release_supervisord_debug
   - release_nginx
   - release_varnish
   - release_manifest_php
@@ -97,16 +97,11 @@ variables:
   extends: .build
   parallel:
     matrix:
-      -   ARCH: ['amd', 'arm']
-          PHP_VERSION: [ '8.0', '8.1' ]
-          TARGET: ['php']
-          PHP_TYPE: ['fpm', 'cli']
-          ALPINE: [ '3.16' ]
       -   ARCH: [ 'amd', 'arm' ]
           PHP_VERSION: [ '8.1', '8.2' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.17', '3.18' ]
+          ALPINE: [ '3.18' ]
   tags:
     - cors-${ARCH}
 
@@ -114,29 +109,20 @@ variables:
   extends: .build
   parallel:
     matrix:
-      -   PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-          TARGET: ['php']
-          PHP_TYPE: ['fpm', 'cli']
-          ALPINE: [ '3.16' ]
       -   PHP_VERSION: [ '8.1', '8.2' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.17', '3.18' ]
+          ALPINE: [ '3.18' ]
 
 .build_php_debug:
   extends: .build
   parallel:
     matrix:
-      - ARCH: ['amd', 'arm']
-        PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        PHP_TYPE: [ 'fpm', 'cli' ]
-        TARGET: [ 'debug' ]
-        ALPINE: [ '3.16' ]
       - ARCH: [ 'amd', 'arm' ]
         PHP_VERSION: [ '8.1', '8.2' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.18' ]
   tags:
     - cors-${ARCH}
 
@@ -144,25 +130,18 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        PHP_TYPE: [ 'fpm', 'cli' ]
-        TARGET: [ 'debug' ]
-        ALPINE: [ '3.16' ]
       - PHP_VERSION: [ '8.1', '8.2' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.18' ]
 
 .build_php_blackfire:
   extends: .build
   parallel:
     matrix:
       - ARCH: ['amd', 'arm']
-        PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        ALPINE: [ '3.16' ]
-      - ARCH: ['amd', 'arm']
         PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.18' ]
   tags:
     - cors-${ARCH}
 
@@ -170,21 +149,16 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        ALPINE: [ '3.16' ]
       - PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.18' ]
 
 .build_supervisord:
   extends: .build
   parallel:
     matrix:
       - ARCH: ['amd', 'arm']
-        PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        ALPINE: [ '3.16' ]
-      - ARCH: ['amd', 'arm']
         PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.18' ]
   tags:
     - cors-${ARCH}
 
@@ -192,32 +166,25 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        ALPINE: [ '3.16' ]
       - PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.18' ]
 
-.build_supervisord_debug:
-  extends: .build
-  parallel:
-    matrix:
-      - ARCH: ['amd', 'arm']
-        PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        ALPINE: [ '3.16' ]
-      - ARCH: ['amd', 'arm']
-        PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
-  tags:
-    - cors-${ARCH}
-
-.manifest_supervisord_debug:
-  extends: .build
-  parallel:
-    matrix:
-      - PHP_VERSION: [ '8.0', '8.1', '8.2' ]
-        ALPINE: [ '3.16' ]
-      - PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+#.build_supervisord_debug:
+#  extends: .build
+#  parallel:
+#    matrix:
+#      - ARCH: ['amd', 'arm']
+#        PHP_VERSION: [ '8.1', '8.2' ]
+#        ALPINE: [ '3.18' ]
+#  tags:
+#    - cors-${ARCH}
+#
+#.manifest_supervisord_debug:
+#  extends: .build
+#  parallel:
+#    matrix:
+#      - PHP_VERSION: [ '8.1', '8.2' ]
+#        ALPINE: [ '3.18' ]
 
 .build_nginx:
   extends: .build
@@ -391,22 +358,22 @@ build_supervisord:
 #  variables:
 #    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
 
-build_supervisord_debug:
-  extends: .build_supervisord_debug
-  stage: build_supervisord_debug
-  except:
-    - tags
-  needs:
-    - build_supervisord
-  script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
-
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-
-    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
-    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
-    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
+#build_supervisord_debug:
+#  extends: .build_supervisord_debug
+#  stage: build_supervisord_debug
+#  except:
+#    - tags
+#  needs:
+#    - build_supervisord
+#  script:
+#    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
+#
+#    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
+#    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
+#
+#    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
+#    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
+#    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
 
 #scan_supervisord_debug:
 #  stage: scan_supervisord_debug
@@ -543,24 +510,24 @@ manifest_supervisord:
   tags:
     - cors
 
-manifest_supervisord_debug:
-  extends:
-    - .manifest
-    - .manifest_supervisord_debug
-  stage: manifest_supervisord_debug
-  needs:
-    - build_supervisord_debug
-  except:
-    - tags
-  variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-  tags:
-    - cors
+#manifest_supervisord_debug:
+#  extends:
+#    - .manifest
+#    - .manifest_supervisord_debug
+#  stage: manifest_supervisord_debug
+#  needs:
+#    - build_supervisord_debug
+#  except:
+#    - tags
+#  variables:
+#    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#  tags:
+#    - cors
 
 manifest_nginx:
   extends:
@@ -665,26 +632,26 @@ release_supervisord:
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
-release_supervisord_debug:
-  extends: .build_supervisord_debug
-  stage: release_supervisord_debug
-  only:
-    refs:
-      - tags
-  needs:
-    - release_supervisord
-  variables:
-    TAG: $CI_COMMIT_REF_NAME
-  script:
-    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-
-    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME .
-    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
-    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+#release_supervisord_debug:
+#  extends: .build_supervisord_debug
+#  stage: release_supervisord_debug
+#  only:
+#    refs:
+#      - tags
+#  needs:
+#    - release_supervisord
+#  variables:
+#    TAG: $CI_COMMIT_REF_NAME
+#  script:
+#    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
+#    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
+#    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
+#
+#    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME .
+#    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
+#    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
+#    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
+#    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
 release_nginx:
   extends: .build_nginx
@@ -826,31 +793,31 @@ release_manifest_supervisord:
   tags:
     - cors
 
-release_manifest_supervisord_debug:
-  extends:
-    - .manifest_release
-    - .manifest_supervisord_debug
-  stage: release_manifest_supervisord_debug
-  needs:
-    - release_supervisord_debug
-  only:
-    refs:
-      - tags
-  variables:
-    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-  tags:
-    - cors
+#release_manifest_supervisord_debug:
+#  extends:
+#    - .manifest_release
+#    - .manifest_supervisord_debug
+#  stage: release_manifest_supervisord_debug
+#  needs:
+#    - release_supervisord_debug
+#  only:
+#    refs:
+#      - tags
+#  variables:
+#    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
+#    IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
+#    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
+#    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
+#    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
+#    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
+#    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
+#  tags:
+#    - cors
 
 release_manifest_nginx:
   extends:
