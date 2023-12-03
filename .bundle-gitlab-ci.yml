@@ -8,7 +8,7 @@ variables:
   TEST_LINT_YAML: "true"
   TEST_LINT_CONTAINER: "true"
   TEST_PSALM: "true"
-  TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
+  TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-3.18-cli
 
 test:
   stage: test
