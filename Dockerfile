@@ -33,15 +33,13 @@ RUN apk update && apk add --no-cache \
       cd ..;  \
       rm -rf ImageMagick.tar.gz ImageMagick-*; \
       rm -rf /usr/local/share/ImageMagick-7; \
-    docker-php-ext-install imagick; \
+    pecl install imagick imagick apcu redis; \
     docker-php-ext-enable imagick; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
     docker-php-ext-configure gd -enable-gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
     docker-php-ext-configure pcntl --enable-pcntl; \
     docker-php-ext-install pcntl; \
-    pecl install apcu; \
-    pecl install redis; \
     docker-php-ext-enable redis apcu; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-install imap; \
