@@ -12,7 +12,7 @@ SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
 ENV TIMEZONE Europe/Vienna
 
-RUN apk update && apk add --no-cache \
+RUN apk update && apk upgrade && apk add --no-cache \
       apk-tools autoconf gcc make g++ automake nasm cmake clang clang-dev \
       curl tzdata freetype libbsd graphviz openssl openblas openblas-dev \
       ffmpeg pngcrush jpegoptim exiftool poppler-utils wget icu-dev oniguruma-dev \
