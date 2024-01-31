@@ -1,6 +1,6 @@
 ARG PHP_VERSION="8.0"
 ARG PHP_TYPE="fpm"
-ARG ALPINE_VERSION=3.16
+ARG ALPINE_VERSION=3.18
 
 FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} as cors_php
 
@@ -20,9 +20,7 @@ RUN apk update && apk upgrade && apk add --no-cache \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
-      musl-locales icu-data-full lcms2-dev; \
-    if [ "$ALPINE_VERSION" = "3.17" ]; then apk add ghostscript libreoffice; fi; \
-    if [ "$ALPINE_VERSION" = "3.18" ]; then apk add ghostscript libreoffice; fi; \
+      musl-locales icu-data-full lcms2-dev add ghostscript libreoffice; \
     curl -fsSL 'https://imagemagick.org/archive/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
       tar xvzf ImageMagick.tar.gz && \
       cd ImageMagick-*; \
@@ -48,9 +46,6 @@ RUN apk update && apk upgrade && apk add --no-cache \
     echo "${TIMEZONE}" > /etc/timezone; \
     apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev; \
     rm -rf /var/cache/apk/*;
-
-
-
 
 ENV COMPOSER_ALLOW_SUPERUSER 1
 ENV COMPOSER_MEMORY_LIMIT -1
