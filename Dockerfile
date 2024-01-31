@@ -20,7 +20,7 @@ RUN apk update && apk upgrade && apk add --no-cache \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
-      musl-locales icu-data-full lcms2-dev add ghostscript libreoffice; \
+      musl-locales icu-data-full lcms2-dev ghostscript libreoffice; \
     curl -fsSL 'https://imagemagick.org/archive/ImageMagick.tar.gz' -o ImageMagick.tar.gz && \
       tar xvzf ImageMagick.tar.gz && \
       cd ImageMagick-*; \
