@@ -191,7 +191,7 @@ variables:
   parallel:
     matrix:
       - ARCH: ['amd', 'arm']
-        NGINX_VERSION: [ '1.21', '1.22', '1.23', '1.24', '1.25' ]
+        NGINX_VERSION: [ '1.21', '1.22', '1.23', '1.24', '1.25', '1.26' ]
   tags:
     - cors-${ARCH}
 
@@ -199,7 +199,7 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - NGINX_VERSION: [ '1.21', '1.22', '1.23', '1.24', '1.25' ]
+      - NGINX_VERSION: [ '1.21', '1.22', '1.23', '1.24', '1.25', '1.26' ]
 
 #.scan:
 #  image:
