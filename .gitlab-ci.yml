@@ -396,7 +396,7 @@ build_nginx:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/nginx
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/nginx
 
-    - docker build -f Dockerfile-nginx --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST .
+    - docker build -f Dockerfile-nginx --build-arg NGINX_VERSION=$NGINX_VERSION --tag $IMAGE_NAME:$NGINX_VERSION-LATEST --tag $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST .
     - docker push "$IMAGE_NAME:$NGINX_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$NGINX_VERSION-LATEST"
 
