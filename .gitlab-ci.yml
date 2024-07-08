@@ -209,14 +209,14 @@ build_php_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
 
-    - docker build \
-        -f Dockerfile-debug \
+    - docker build
+        -f Dockerfile-debug
         --tag $IMAGE_NAME:$PHP_VERSION-LATEST
-        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST \
-        --build-arg FROM=$FROM_IMAGE_NAME \
-        --build-arg PHP_VERSION=$PHP_VERSION \
-        --build-arg ALPINE_VERSION=$ALPINE \
-        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC \
+        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+        --build-arg FROM=$FROM_IMAGE_NAME
+        --build-arg PHP_VERSION=$PHP_VERSION
+        --build-arg ALPINE_VERSION=$ALPINE
+        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC
       .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
@@ -234,14 +234,14 @@ build_php_blackfire:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
 
-    - docker build \
-        -f Dockerfile-blackfire \
-        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
-        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST \
-        --build-arg FROM=$FROM_IMAGE_NAME \
-        --build-arg PHP_VERSION=$PHP_VERSION \
-        --build-arg ALPINE_VERSION=$ALPINE \
-        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC \
+    - docker build
+        -f Dockerfile-blackfire
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST
+        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+        --build-arg FROM=$FROM_IMAGE_NAME
+        --build-arg PHP_VERSION=$PHP_VERSION
+        --build-arg ALPINE_VERSION=$ALPINE
+        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC
       .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
@@ -259,13 +259,13 @@ build_supervisord:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
 
-    - docker build \
-        -f Dockerfile-supervisord \
-        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
-        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST \
-        --build-arg FROM=$FROM_IMAGE_NAME \
-        --build-arg ALPINE_VERSION=$ALPINE \
-        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC \
+    - docker build
+        -f Dockerfile-supervisord
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST
+        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
+        --build-arg FROM=$FROM_IMAGE_NAME
+        --build-arg ALPINE_VERSION=$ALPINE
+        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC
       .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
