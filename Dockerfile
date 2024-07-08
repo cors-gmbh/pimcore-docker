@@ -31,8 +31,15 @@ RUN apk update && apk upgrade && apk add --no-cache \
       cd ..;  \
       rm -rf ImageMagick.tar.gz ImageMagick-*; \
       rm -rf /usr/local/share/ImageMagick-7; \
-    pecl install imagick imagick apcu redis; \
-    docker-php-ext-enable imagick; \
+    pecl install apcu redis; \
+    if [ "$PHP_VERSION" = "8.3" ]; then \
+      mkdir -p /usr/src/php/ext/imagick && \
+      curl -fsSL https://github.com/Imagick/imagick/archive/"$IMAGICK_VERSION_FROM_SRC".tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1 && \
+      docker-php-ext-install imagick; \
+    else \
+      pecl install imagick && \
+      docker-php-ext-enable imagick; \
+    fi; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
     docker-php-ext-configure gd -enable-gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \

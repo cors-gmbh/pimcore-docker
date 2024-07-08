@@ -6,9 +6,10 @@ docker build \
   --pull \
   --tag base \
   --target=cors_php_fpm \
-  --build-arg PHP_VERSION=8.1 \
+  --build-arg PHP_VERSION=8.3 \
   --build-arg PHP_TYPE=fpm \
-  --build-arg ALPINE_VERSION=3.18 \
+  --build-arg ALPINE_VERSION=3.20 \
+  --build-arg IMAGICK_VERSION_FROM_SRC=28f27044e435a2b203e32675e942eb8de620ee58 \
   --progress plain \
   .
 ```

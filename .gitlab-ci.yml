@@ -3,21 +3,18 @@ stages:
   - build_php_debug
   - build_php_blackfire
   - build_supervisord
-#  - build_supervisord_debug
   - build_nginx
   - build_varnish
   - manifest_php
   - manifest_php_debug
   - manifest_php_blackfire
   - manifest_supervisord
-#  - manifest_supervisord_debug
   - manifest_nginx
   - manifest_varnish
   - release_php
   - release_php_debug
   - release_php_blackfire
   - release_supervisord
-#  - release_supervisord_debug
   - release_nginx
   - release_varnish
   - release_manifest_php
@@ -26,19 +23,12 @@ stages:
   - release_manifest_supervisord
   - release_manifest_supervisord_debug
   - release_manifest_nginx
-#  - scan_php
-#  - scan_php_debug
-#  - scan_php_blackfire
-#  - scan_supervisord
-#  - scan_supervisord_debug
-#  - scan_nginx
-#  - scan_varnish
 
 variables:
   GCP_URL: europe-west3-docker.pkg.dev
   GCP_REGISTRY_IMAGE: $GCP_URL/cors-wolke/$CI_PROJECT_PATH
   DOCKER_BUILDKIT: 1
-
+  IMAGICK_VERSION_FROM_SRC: "28f27044e435a2b203e32675e942eb8de620ee58"
 
 .build:
   image: docker:stable
@@ -98,10 +88,10 @@ variables:
   parallel:
     matrix:
       -   ARCH: [ 'amd', 'arm' ]
-          PHP_VERSION: [ '8.1', '8.2' ]
+          PHP_VERSION: [ '8.1', '8.2', '8.3' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.18', '3.19' ]
+          ALPINE: [ '3.18', '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -109,20 +99,20 @@ variables:
   extends: .build
   parallel:
     matrix:
-      -   PHP_VERSION: [ '8.1', '8.2' ]
+      -   PHP_VERSION: [ '8.1', '8.2', '8.3' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.18', '3.19' ]
+          ALPINE: [ '3.18', '3.19', '3.20' ]
 
 .build_php_debug:
   extends: .build
   parallel:
     matrix:
       - ARCH: [ 'amd', 'arm' ]
-        PHP_VERSION: [ '8.1', '8.2' ]
+        PHP_VERSION: [ '8.1', '8.2', '8.3' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.18', '3.19' ]
+        ALPINE: [ '3.18', '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -130,18 +120,18 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.1', '8.2' ]
+      - PHP_VERSION: [ '8.1', '8.2', '8.3' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.18', '3.19' ]
+        ALPINE: [ '3.18', '3.19', '3.20' ]
 
 .build_php_blackfire:
   extends: .build
   parallel:
     matrix:
       - ARCH: ['amd', 'arm']
-        PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.18', '3.19' ]
+        PHP_VERSION: [ '8.1', '8.2', '8.3' ]
+        ALPINE: [ '3.18', '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -149,16 +139,16 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.18', '3.19' ]
+      - PHP_VERSION: [ '8.1', '8.2', '8.3' ]
+        ALPINE: [ '3.18', '3.19', '3.20' ]
 
 .build_supervisord:
   extends: .build
   parallel:
     matrix:
       - ARCH: ['amd', 'arm']
-        PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.18', '3.19' ]
+        PHP_VERSION: [ '8.1', '8.2', '8.3' ]
+        ALPINE: [ '3.18', '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -166,25 +156,8 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.18', '3.19' ]
-
-#.build_supervisord_debug:
-#  extends: .build
-#  parallel:
-#    matrix:
-#      - ARCH: ['amd', 'arm']
-#        PHP_VERSION: [ '8.1', '8.2' ]
-#        ALPINE: [ '3.18' ]
-#  tags:
-#    - cors-${ARCH}
-#
-#.manifest_supervisord_debug:
-#  extends: .build
-#  parallel:
-#    matrix:
-#      - PHP_VERSION: [ '8.1', '8.2' ]
-#        ALPINE: [ '3.18' ]
+      - PHP_VERSION: [ '8.1', '8.2', '8.3' ]
+        ALPINE: [ '3.18', '3.19', '3.20' ]
 
 .build_nginx:
   extends: .build
@@ -201,51 +174,6 @@ variables:
     matrix:
       - NGINX_VERSION: [ '1.21', '1.22', '1.23', '1.24', '1.25', '1.26' ]
 
-#.scan:
-#  image:
-#    name: docker.io/aquasec/trivy:latest
-#    entrypoint: [ "" ]
-#  variables:
-#    GIT_STRATEGY: none
-#    TRIVY_NO_PROGRESS: "true"
-#    TRIVY_CACHE_DIR: ".trivycache/"
-#  allow_failure: true
-#  before_script:
-#    - mkdir -p ~/.docker
-#    - export GCR_AUTH=$(echo "_json_key:$GOOGLE_ARTIFACT_REGISTRY" | tr -d '[:space:]')
-#    - |
-#      cat << EOF > ~/.docker/config.json
-#      {"auths":
-#        {
-#          "europe-west3-docker.pkg.dev":{"auth":"$GCR_AUTH"}
-#        }
-#      }
-#      EOF
-#  after_script:
-#    - echo "scan complete"
-#  script:
-#    - trivy --version
-#    # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-#    - time trivy image --clear-cache
-#    # update vulnerabilities db
-#    - time trivy image --download-db-only
-#    # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
-#    - time trivy image --exit-code 0 --format template --template "@/contrib/gitlab.tpl"
-#      --output "$CI_PROJECT_DIR/gl-container-scanning-report.json" "$FULL_IMAGE_NAME"
-#    # Prints full report
-#    - time trivy image --exit-code 0 "$FULL_IMAGE_NAME"
-#    # Fail on critical vulnerabilities
-#    - time trivy image --exit-code 1 --severity CRITICAL "$FULL_IMAGE_NAME"
-#  cache:
-#    paths:
-#      - .trivycache/
-#  artifacts:
-#    when: always
-#    reports:
-#      container_scanning: gl-container-scanning-report.json
-#  tags:
-#    - cors
-
 build_php:
   extends: .build_php
   stage: build_php
@@ -255,21 +183,18 @@ build_php:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE
 
-    - docker build --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --target=cors_php_$PHP_TYPE --build-arg PHP_VERSION=$PHP_VERSION --build-arg PHP_TYPE=$PHP_TYPE --build-arg ALPINE_VERSION=$ALPINE .
+    - docker build \
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
+        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST \
+        --target=cors_php_$PHP_TYPE \
+        --build-arg PHP_VERSION=$PHP_VERSION \
+        --build-arg PHP_TYPE=$PHP_TYPE \
+        --build-arg ALPINE_VERSION=$ALPINE \
+        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC \
+      .
+
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_php:
-#  stage: scan_php
-#  needs:
-#    - manifest_php
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_php
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE:$PHP_VERSION-LATEST
 
 build_php_debug:
   extends: .build_php_debug
@@ -284,21 +209,17 @@ build_php_debug:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-$PHP_TYPE-debug
 
-    - docker build -f Dockerfile-debug --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
+    - docker build \
+        -f Dockerfile-debug \
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST
+        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST \
+        --build-arg FROM=$FROM_IMAGE_NAME \
+        --build-arg PHP_VERSION=$PHP_VERSION \
+        --build-arg ALPINE_VERSION=$ALPINE \
+        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC \
+      .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_php_debug:
-#  stage: scan_php_debug
-#  needs:
-#    - manifest_php_debug
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_php_debug
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-$PHP_TYPE-debug:$PHP_VERSION-LATEST
 
 build_php_blackfire:
   extends: .build_php_blackfire
@@ -313,21 +234,17 @@ build_php_blackfire:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-fpm-blackfire
 
-    - docker build -f Dockerfile-blackfire --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME --build-arg PHP_VERSION=$PHP_VERSION  --build-arg ALPINE_VERSION=$ALPINE .
+    - docker build \
+        -f Dockerfile-blackfire \
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
+        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST \
+        --build-arg FROM=$FROM_IMAGE_NAME \
+        --build-arg PHP_VERSION=$PHP_VERSION \
+        --build-arg ALPINE_VERSION=$ALPINE \
+        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC \
+      .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_php_blackfire:
-#  stage: scan_php_blackfire
-#  needs:
-#    - manifest_php_blackfire
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_php_blackfire
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-fpm-blackfire:$PHP_VERSION-LATEST
 
 build_supervisord:
   extends: .build_supervisord
@@ -342,50 +259,16 @@ build_supervisord:
     - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
     - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord
 
-    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
+    - docker build \
+        -f Dockerfile-supervisord \
+        --tag $IMAGE_NAME:$PHP_VERSION-LATEST \
+        --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST \
+        --build-arg FROM=$FROM_IMAGE_NAME \
+        --build-arg ALPINE_VERSION=$ALPINE \
+        --build-arg IMAGICK_VERSION_FROM_SRC=$IMAGICK_VERSION_FROM_SRC \
+      .
     - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_supervisord:
-#  stage: scan_supervisord
-#  needs:
-#    - manifest_supervisord
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_supervisord
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-
-#build_supervisord_debug:
-#  extends: .build_supervisord_debug
-#  stage: build_supervisord_debug
-#  except:
-#    - tags
-#  needs:
-#    - build_supervisord
-#  script:
-#    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-supervisord:$PHP_VERSION-LATEST
-#
-#    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#
-#    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --build-arg FROM=$FROM_IMAGE_NAME  --build-arg ALPINE_VERSION=$ALPINE .
-#    - docker push "$IMAGE_NAME:$PHP_VERSION-LATEST"
-#    - docker push "$IMAGE_NAME_GCP:$PHP_VERSION-LATEST"
-
-#scan_supervisord_debug:
-#  stage: scan_supervisord_debug
-#  needs:
-#    - manifest_supervisord_debug
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_supervisord_debug
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
 
 build_nginx:
   extends: .build_nginx
@@ -400,18 +283,6 @@ build_nginx:
     - docker push "$IMAGE_NAME:$NGINX_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$NGINX_VERSION-LATEST"
 
-#scan_nginx:
-#  stage: scan_nginx
-#  needs:
-#    - manifest_nginx
-#  except:
-#    - tags
-#  extends:
-#    - .manifest_nginx
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/nginx:$NGINX_VERSION-LATEST
-
 build_varnish:
   extends: .build
   stage: build_varnish
@@ -423,17 +294,6 @@ build_varnish:
     - docker build -f Dockerfile-varnish --tag $IMAGE_NAME:LATEST --tag $IMAGE_NAME_GCP:LATEST .
     - docker push "$IMAGE_NAME:LATEST"
     - docker push "$IMAGE_NAME_GCP:LATEST"
-
-#scan_varnish:
-#  stage: scan_varnish
-#  needs:
-#    - build_varnish
-#  except:
-#    - tags
-#  extends:
-#    - .scan
-#  variables:
-#    FULL_IMAGE_NAME: $GCP_REGISTRY_IMAGE/varnish:LATEST
 
 manifest_php:
   extends:
@@ -509,25 +369,6 @@ manifest_supervisord:
     IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
   tags:
     - cors
-
-#manifest_supervisord_debug:
-#  extends:
-#    - .manifest
-#    - .manifest_supervisord_debug
-#  stage: manifest_supervisord_debug
-#  needs:
-#    - build_supervisord_debug
-#  except:
-#    - tags
-#  variables:
-#    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#  tags:
-#    - cors
 
 manifest_nginx:
   extends:
@@ -631,27 +472,6 @@ release_supervisord:
     - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
     - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
-
-#release_supervisord_debug:
-#  extends: .build_supervisord_debug
-#  stage: release_supervisord_debug
-#  only:
-#    refs:
-#      - tags
-#  needs:
-#    - release_supervisord
-#  variables:
-#    TAG: $CI_COMMIT_REF_NAME
-#  script:
-#    - FROM_IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord:$PHP_VERSION-LATEST
-#    - IMAGE_NAME=$CI_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/$ARCH/php-alpine-$ALPINE-supervisord-debug
-#
-#    - docker build -f Dockerfile-supervisord --tag $IMAGE_NAME:$PHP_VERSION-LATEST --tag $IMAGE_NAME:$PHP_VERSION-$TAG --tag $IMAGE_NAME_GCP:$PHP_VERSION-LATEST --tag $IMAGE_NAME_GCP:$PHP_VERSION-$TAG --build-arg FROM=$FROM_IMAGE_NAME .
-#    - docker push $IMAGE_NAME:$PHP_VERSION-$TAG
-#    - docker push $IMAGE_NAME:$PHP_VERSION-LATEST
-#    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-$TAG
-#    - docker push $IMAGE_NAME_GCP:$PHP_VERSION-LATEST
 
 release_nginx:
   extends: .build_nginx
@@ -792,32 +612,6 @@ release_manifest_supervisord:
     IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord:$PHP_VERSION-$CI_COMMIT_REF_NAME
   tags:
     - cors
-
-#release_manifest_supervisord_debug:
-#  extends:
-#    - .manifest_release
-#    - .manifest_supervisord_debug
-#  stage: release_manifest_supervisord_debug
-#  needs:
-#    - release_supervisord_debug
-#  only:
-#    refs:
-#      - tags
-#  variables:
-#    IMAGE_NAME: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_TAG: $CI_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_TAG_GCP: $GCP_REGISTRY_IMAGE/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_AMD: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_AMD_TAG: $CI_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_AMD_TAG_GCP: $GCP_REGISTRY_IMAGE/amd/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_ARM: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-LATEST
-#    IMAGE_NAME_ARM_TAG: $CI_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#    IMAGE_NAME_ARM_TAG_GCP: $GCP_REGISTRY_IMAGE/arm/php-alpine-$ALPINE-supervisord-debug:$PHP_VERSION-$CI_COMMIT_REF_NAME
-#  tags:
-#    - cors
 
 release_manifest_nginx:
   extends:
