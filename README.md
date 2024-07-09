@@ -4,10 +4,23 @@
 ```bash
 docker build \
   --pull \
-  --tag base \
+  --tag cors-base \
   --target=cors_php_fpm \
   --build-arg PHP_VERSION=8.3 \
   --build-arg PHP_TYPE=fpm \
+  --build-arg ALPINE_VERSION=3.20 \
+  --build-arg IMAGICK_VERSION_FROM_SRC=28f27044e435a2b203e32675e942eb8de620ee58 \
+  --progress plain \
+  .
+```
+
+### Debug
+```bash
+docker build \
+  --tag base-debug \
+  -f Dockerfile-debug \
+  --build-arg FROM=cors-base \
+  --build-arg PHP_VERSION=8.3 \
   --build-arg ALPINE_VERSION=3.20 \
   --build-arg IMAGICK_VERSION_FROM_SRC=28f27044e435a2b203e32675e942eb8de620ee58 \
   --progress plain \
