@@ -91,7 +91,7 @@ variables:
           PHP_VERSION: [ '8.1', '8.2', '8.3' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.18', '3.19', '3.20' ]
+          ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -102,7 +102,7 @@ variables:
       -   PHP_VERSION: [ '8.1', '8.2', '8.3' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.18', '3.19', '3.20' ]
+          ALPINE: [ '3.19', '3.20' ]
 
 .build_php_debug:
   extends: .build
@@ -112,7 +112,7 @@ variables:
         PHP_VERSION: [ '8.1', '8.2', '8.3' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.18', '3.19', '3.20' ]
+        ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -123,7 +123,7 @@ variables:
       - PHP_VERSION: [ '8.1', '8.2', '8.3' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.18', '3.19', '3.20' ]
+        ALPINE: [ '3.19', '3.20' ]
 
 .build_php_blackfire:
   extends: .build
@@ -131,7 +131,7 @@ variables:
     matrix:
       - ARCH: ['amd', 'arm']
         PHP_VERSION: [ '8.1', '8.2', '8.3' ]
-        ALPINE: [ '3.18', '3.19', '3.20' ]
+        ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -140,7 +140,7 @@ variables:
   parallel:
     matrix:
       - PHP_VERSION: [ '8.1', '8.2', '8.3' ]
-        ALPINE: [ '3.18', '3.19', '3.20' ]
+        ALPINE: [ '3.19', '3.20' ]
 
 .build_supervisord:
   extends: .build
@@ -148,7 +148,7 @@ variables:
     matrix:
       - ARCH: ['amd', 'arm']
         PHP_VERSION: [ '8.1', '8.2', '8.3' ]
-        ALPINE: [ '3.18', '3.19', '3.20' ]
+        ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -157,14 +157,14 @@ variables:
   parallel:
     matrix:
       - PHP_VERSION: [ '8.1', '8.2', '8.3' ]
-        ALPINE: [ '3.18', '3.19', '3.20' ]
+        ALPINE: [ '3.19', '3.20' ]
 
 .build_nginx:
   extends: .build
   parallel:
     matrix:
       - ARCH: ['amd', 'arm']
-        NGINX_VERSION: [ '1.21', '1.22', '1.23', '1.24', '1.25', '1.26' ]
+        NGINX_VERSION: [ '1.25', '1.26' ]
   tags:
     - cors-${ARCH}
 
@@ -172,7 +172,7 @@ variables:
   extends: .build
   parallel:
     matrix:
-      - NGINX_VERSION: [ '1.21', '1.22', '1.23', '1.24', '1.25', '1.26' ]
+      - NGINX_VERSION: [ '1.25', '1.26' ]
 
 build_php:
   extends: .build_php

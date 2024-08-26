@@ -94,7 +94,7 @@ variables:
           PHP_VERSION: [ '8.1', '8.2' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.17', '3.18' ]
+          ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -109,7 +109,7 @@ variables:
       -   PHP_VERSION: [ '8.1', '8.2' ]
           TARGET: [ 'php' ]
           PHP_TYPE: [ 'fpm', 'cli' ]
-          ALPINE: [ '3.17', '3.18' ]
+          ALPINE: [ '3.19', '3.20' ]
 
 .build_php_debug:
   extends: .build
@@ -124,7 +124,7 @@ variables:
         PHP_VERSION: [ '8.1', '8.2' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -139,7 +139,7 @@ variables:
       - PHP_VERSION: [ '8.1', '8.2' ]
         PHP_TYPE: [ 'fpm', 'cli' ]
         TARGET: [ 'debug' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.19', '3.20' ]
 
 .build_php_blackfire:
   extends: .build
@@ -150,7 +150,7 @@ variables:
         ALPINE: [ '3.16' ]
       - ARCH: ['amd', 'arm']
         PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -161,7 +161,7 @@ variables:
       - PHP_VERSION: [ '8.0', '8.1', '8.2' ]
         ALPINE: [ '3.16' ]
       - PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.19', '3.20' ]
 
 .build_supervisord:
   extends: .build
@@ -172,7 +172,7 @@ variables:
         ALPINE: [ '3.16' ]
       - ARCH: ['amd', 'arm']
         PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.19', '3.20' ]
   tags:
     - cors-${ARCH}
 
@@ -183,7 +183,7 @@ variables:
       - PHP_VERSION: [ '8.0', '8.1', '8.2' ]
         ALPINE: [ '3.16' ]
       - PHP_VERSION: [ '8.1', '8.2' ]
-        ALPINE: [ '3.17', '3.18' ]
+        ALPINE: [ '3.19', '3.20' ]
 
 .build_nginx:
   extends: .build

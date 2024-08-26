@@ -37,11 +37,11 @@ docker run -v "$(pwd)":/workspace -v "$(pwd)/cache":/cache -v ./auth.json:/kanik
     --dockerfile "Dockerfile" \
     --target=cors_php \
     --build-arg COMPOSER_AUTH="$COMPOSER_AUTH"  \
-    --build-arg DOCKER_BASE_VERSION="4.1.0"  \
+    --build-arg DOCKER_BASE_VERSION="5.2.0"  \
     --build-arg APP_ENV="coreshop"  \
-    --build-arg PHP_VERSION="8.1" \
-    --build-arg NGINX_VERSION="1.21" \
-    --build-arg ALPINE_VERSION="3.17" \
+    --build-arg PHP_VERSION="8.2" \
+    --build-arg NGINX_VERSION="1.26" \
+    --build-arg ALPINE_VERSION="3.20" \
     --build-arg REGISTRY_URL="europe-west3-docker.pkg.dev/cors-wolke/cors/docker" \
     --cache=true \
     --cache-dir=/cache \
