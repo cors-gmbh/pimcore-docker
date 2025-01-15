@@ -46,6 +46,7 @@ RUN set -eux; \
     docker-php-ext-install gd; \
     docker-php-ext-configure pcntl --enable-pcntl; \
     docker-php-ext-install pcntl; \
+    pecl install apcu redis; \
     docker-php-ext-enable redis apcu; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-install imap; \
