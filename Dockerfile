@@ -35,7 +35,7 @@ RUN set -eux; \
       rm -rf /usr/local/share/ImageMagick-7; \
     if [ "$PHP_VERSION" = "8.3" ]; then \
       mkdir -p /usr/src/php/ext/imagick; \
-      curl -fsSL https://github.com/Imagick/imagick/archive/"${IMAGICK_VERSION_FROM_SRC}".tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1; \
+      curl -fsSL https://github.com/Imagick/imagick/archive/${IMAGICK_VERSION_FROM_SRC}.tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1; \
       docker-php-ext-install imagick; \
     else \
       pecl install imagick; \
