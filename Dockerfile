@@ -7,13 +7,15 @@ FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} as cors_php
 ARG PHP_VERSION
 ARG PHP_TYPE
 ARG ALPINE_VERSION
+ARG IMAGICK_VERSION_FROM_SRC=""
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
 ENV TIMEZONE Europe/Vienna
 
-RUN apk update && apk upgrade && apk add --no-cache \
-      apk-tools autoconf gcc make g++ automake nasm cmake clang clang-dev \
+RUN set -eux; \
+    apk update && apk upgrade && apk add --no-cache \
+      apk-tools autoconf gcc make g++ automake nasm cmake clang clang-dev tar \
       curl tzdata freetype libbsd graphviz openssl openblas openblas-dev \
       ffmpeg pngcrush jpegoptim exiftool poppler-utils wget icu-dev oniguruma-dev \
       libwebp libwebp-tools cmake unzip libxml2-dev libxslt-dev \
@@ -31,13 +33,12 @@ RUN apk update && apk upgrade && apk add --no-cache \
       cd ..;  \
       rm -rf ImageMagick.tar.gz ImageMagick-*; \
       rm -rf /usr/local/share/ImageMagick-7; \
-    pecl install apcu redis; \
     if [ "$PHP_VERSION" = "8.3" ]; then \
-      mkdir -p /usr/src/php/ext/imagick && \
-      curl -fsSL https://github.com/Imagick/imagick/archive/"$IMAGICK_VERSION_FROM_SRC".tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1 && \
+      mkdir -p /usr/src/php/ext/imagick; \
+      curl -fsSL https://github.com/Imagick/imagick/archive/"${IMAGICK_VERSION_FROM_SRC}".tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1; \
       docker-php-ext-install imagick; \
     else \
-      pecl install imagick && \
+      pecl install imagick; \
       docker-php-ext-enable imagick; \
     fi; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
@@ -51,7 +52,7 @@ RUN apk update && apk upgrade && apk add --no-cache \
     docker-php-ext-enable imap; \
     cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime; \
     echo "${TIMEZONE}" > /etc/timezone; \
-    apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev; \
+    apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev tar; \
     rm -rf /var/cache/apk/*;
 
 ENV COMPOSER_ALLOW_SUPERUSER 1
