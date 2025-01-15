@@ -1,53 +1,120 @@
-# CORS Docker Images
+[![Build status](https://github.com/imagick/imagick/actions/workflows/main.yml/badge.svg)](https://github.com/Imagick/imagick/actions)
 
-## Local Docker Build
-```bash
-docker build \
-  --pull \
-  --tag cors-base \
-  --target=cors_php_fpm \
-  --build-arg PHP_VERSION=8.3 \
-  --build-arg PHP_TYPE=fpm \
-  --build-arg ALPINE_VERSION=3.20 \
-  --build-arg IMAGICK_VERSION_FROM_SRC=28f27044e435a2b203e32675e942eb8de620ee58 \
-  --progress plain \
-  .
+[![Build status](https://github.com/imagick/imagick/actions/workflows/windows.yml/badge.svg)](https://github.com/Imagick/imagick/actions)
+
+# 🌈🌈 Imagick 🌈🌈
+
+Imagick is a PHP extension to create and modify images using the ImageMagick library. There is also a version of Imagick available for HHVM. Although the two extensions are mostly compatible in their API, and they both call the ImageMagick library, the two extensions are completely separate code-bases.
+
+## PHP Imagick
+
+* Source code + issues - https://github.com/imagick/imagick
+* Releases - http://pecl.php.net/package/imagick
+* Documentation - http://php.net/manual/en/book.imagick.php
+    
+Bugs can also be reported at https://bugs.php.net but may have a slower response time.
+
+## HHVM Imagick
+
+* https://github.com/facebook/hhvm/tree/master/hphp/runtime/ext/imagick
+
+# Installation on Linux
+
+The best way of installing Imagick is through a package manager e.g. apt, yum, brew, as they will also install ImageMagick for you.
+
+If you need to compile Imagick from source, first you should install [ImageMagick](https://github.com/ImageMagick/ImageMagick), at least version 6.2.4 but it is STRONGLY recommended to use a more recent version due to the many bug fixes in it.
+
+Once ImageMagick is installed, the following commands will compile and install Imagick:
+
+```
+git clone https://github.com/Imagick/imagick
+cd imagick
+phpize && ./configure
+make
+make install
 ```
 
-### Debug
-```bash
-docker build \
-  --tag base-debug \
-  -f Dockerfile-debug \
-  --build-arg FROM=cors-base \
-  --build-arg PHP_VERSION=8.3 \
-  --build-arg ALPINE_VERSION=3.20 \
-  --build-arg IMAGICK_VERSION_FROM_SRC=28f27044e435a2b203e32675e942eb8de620ee58 \
-  --progress plain \
-  .
+You will also need to add `extension=imagick.so` to your PHP ini file to make PHP load the extension.
+
+
+# Installing on Windows
+
+For Windows please install both Imagick and the underlying ImageMagick library from:
+* http://windows.php.net/downloads/pecl/releases/imagick/
+* http://windows.php.net/downloads/pecl/deps/
+
+Once compiled, Imagick should be run with the same version of ImageMagick that it was compiled against. Running against a different version of ImageMagick is known to cause stability issues, and so is not recommended or supported.
+
+# NixOS
+
+If using Imagick on NixOS, you probably [want to define](https://github.com/Imagick/imagick/blob/master/docker/nixos/shell.nix) FONTCONFIG_FILE to avoid a warning message when loading fonts, and MAGICK_CONFIGURE_PATH to have all the information available from Imagick::getConfigureOptions().
+
+# Examples
+
+Almost all of the functions in the library have an example at [www.phpimagick.com](http://www.phpimagick.com/), where you can see the example code to call the function, as well as the generated image or output.
+
+
+# ImageMagick
+
+
+ImageMagick, the library that the Imagick extension exposes to PHP has had many bug fixes, that have fixed many image corruption issues. We _strongly_ recommend upgrading to the latest version (greater than 6.9.1 or 7.x) if at all possible.
+
+
+# Security
+
+The PHP extension Imagick works by calling the ImageMagick library. Although the ImageMagick developers take good care in avoiding bugs it is inevitable that some bugs will be present in the code. ImageMagick also uses a lot of third party libraries to open, read and manipulate files. The writers of these libraries also take care when writing their code. However everyone makes mistakes and there will inevitably be some bugs present.
+
+Because ImageMagick is used to process images it is feasibly possible for hackers to create images that contain invalid data to attempt to exploit these bugs. Because of this we recommend the following:
+
+1) Do not run Imagick in a server that is directly accessible from outside your network. It is better to either use it as a background task using something like SupervisorD or to run it in a separate server that is not directly accessible on the internet. 
+
+Doing this will make it more difficult for hackers to exploit a bug, if one should exist in the libraries that ImageMagick is using. 
+
+2) Run it as a very low privileged process. As much as possible the files and system resources accessible to the PHP script that Imagick is being called from should be locked down. 
+
+3) Verify that all image files begin with the expected "magic bytes" corresponding to the image file types you support before sending them to ImageMagick for processing. This an be be done with finfo_file() - see below.
+
+4) Check the result of the image processing is a valid image file before displaying it to the user. In the extremely unlikely event that a hacker is able to pipe arbitrary files to the output of Imagick, checking that it is an image file, and not the source code of your application that is being sent, is a sensible precaution. This can be accomplished by the following code:
+
+
+```php
+<?php
+	$finfo = finfo_open(FILEINFO_MIME_TYPE);
+	$mimeType = finfo_file($finfo, $filename);
+	
+	$allowedMimeTypes = [
+		'image/gif',
+		'image/jpeg',
+		'image/jpg',
+		'image/png'
+	];
+	
+	if (in_array($mimeType, $allowedMimeTypes) == false) {
+		throw new \SecurityException("Was going to send file '$filename' to the user, but it is not an image file.");
+	}
 ```
 
-## Project Kaniko Build
-Example is for ocay Project, used to test local builds with kaniko.
+5) NEVER directly serve any files that have been uploaded by users directly through PHP, instead either serve them through the webserver, without invoking PHP, or use [readfile](http://php.net/manual/en/function.readfile.php) to serve them within PHP.
 
-```bash
-docker run -v "$(pwd)":/workspace -v "$(pwd)/cache":/cache -v ./auth.json:/kaniko/.docker/config.json gcr.io/kaniko-project/executor:latest \
-    --context /workspace \
-    --use-new-run \
-    --dockerfile "Dockerfile" \
-    --target=cors_php \
-    --build-arg COMPOSER_AUTH="$COMPOSER_AUTH"  \
-    --build-arg DOCKER_BASE_VERSION="5.2.0"  \
-    --build-arg APP_ENV="coreshop"  \
-    --build-arg PHP_VERSION="8.2" \
-    --build-arg NGINX_VERSION="1.26" \
-    --build-arg ALPINE_VERSION="3.20" \
-    --build-arg REGISTRY_URL="europe-west3-docker.pkg.dev/cors-wolke/cors/docker" \
-    --cache=true \
-    --cache-dir=/cache \
-    --tar-path=/cache \
-    --no-push \
-    --cache-repo=europe-west3-docker.pkg.dev/cors-wolke/cors/ocay/php-alpine-fpm \
-    --single-snapshot \
-    --destination=/cache/image.tar.gz
-```
+These recommendations do not guarantee any security, but they should limit your exposure to any Imagick/ImageMagick related security issue.
+
+# OpenMP
+
+ImageMagick has the ability to use the Open Multi-Processing API to be able to use multiple threads to process an image at once. Some implementations of OpenMP are known to have stability issues when they are used in certain environments. 
+
+We recommend doing one of the following:
+
+* Disabling OpenMP support in ImageMagick by compiling it with the compile flag "--disable-openmp" set.
+
+* Disable the use of threads in ImageMagick via Imagick by calling: `Imagick::setResourceLimit(\Imagick::RESOURCETYPE_THREAD, 1);` or `Imagick::setResourceLimit(6, 1);` if your version of Imagick does not contain the RESOURCETYPE_THREAD constant.
+
+* Disable the use of threads in ImageMagick by setting the thread resource limit in ImageMagick' policy.xml file with `<policy domain="resource" name="thread" value="1"/>` This file is possibly located at /etc/ImageMagick-6/policy.xml or similar location.
+
+* If you do want to use OpenMP in ImageMagick when it's called through Imagick, you should test thoroughly that it behaves correctly on your server.
+
+
+# TODO
+
+Documentation needs a lot of work. There is an online editor here: [https://edit.php.net/](https://edit.php.net/) Contributions are more than welcome.
+
+Please refer to http://abi-laboratory.pro/tracker/timeline/imagemagick/ for exact version changes of the underlying ImageMagick library.
