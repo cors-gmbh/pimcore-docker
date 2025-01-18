@@ -25,7 +25,7 @@ RUN set -eux; \
       musl-locales icu-data-full lcms2-dev ghostscript libreoffice imagemagick imagemagick-dev; \
     if [ "$PHP_VERSION" = "8.3" ] || [ "$PHP_VERSION" = "8.4" ]; then \
       mkdir -p /usr/src/php/ext/imagick; \
-      curl -fsSL https://github.com/Imagick/imagick/archive/"${IMAGICK_VERSION_FROM_SRC}".tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1; \
+      curl -fsSL https://github.com/Imagick/imagick/archive/${IMAGICK_VERSION_FROM_SRC}.tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1; \
       if [ "$PHP_VERSION" = "8.4" ]; then \
         sed -i 's/php_strtolower/zend_str_tolower/g' /usr/src/php/ext/imagick/imagick.c; \
       fi; \
@@ -39,6 +39,7 @@ RUN set -eux; \
     docker-php-ext-install gd; \
     docker-php-ext-configure pcntl --enable-pcntl; \
     docker-php-ext-install pcntl; \
+    pecl install apcu redis; \
     docker-php-ext-enable redis apcu; \
     docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
     docker-php-ext-install imap; \
