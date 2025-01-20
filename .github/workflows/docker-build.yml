@@ -21,7 +21,11 @@ env:
 
 jobs:
   build:
-    name: Build ${{ inputs.component }} ${{ matrix.arch }}/${{ matrix.php_version || matrix.nginx_version }}/${{ matrix.alpine || 'N/A' }}/${{ matrix.php_type || 'N/A' }}
+    name: >
+      Build ${{ inputs.component }}
+      ${{ matrix.arch }}/
+      ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}
+      ${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJson(inputs.matrix) }}
@@ -48,6 +52,11 @@ jobs:
           fi
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
+      - name: Pull Latest Image for Cache
+        run: |
+          REGISTRY=ghcr.io/${{ github.repository }}
+          docker pull $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST || echo "No cache available"
+
       - name: Build Docker Image
         id: build
         run: |
@@ -65,6 +74,7 @@ jobs:
 
           docker build \
             -f $DOCKERFILE \
+            --cache-from $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
             --tag $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
             --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
             --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
@@ -77,9 +87,17 @@ jobs:
         run: |
           docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST
 
-      - name: Generate artifact attestation
+      - name: Get Image Digest
+        id: get_digest
+        run: |
+          REGISTRY=ghcr.io/${{ github.repository }}
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST | cut -d '@' -f 2)
+          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_ENV
+          echo "IMAGE_DIGEST=$DIGEST" # Output to logs for debugging
+
+      - name: Generate Artifact Attestation
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/${{ github.repository }}/$IMAGE_NAME
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ env.IMAGE_DIGEST }}
           push-to-registry: true
