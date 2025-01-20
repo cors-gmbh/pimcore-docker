@@ -113,15 +113,15 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     outputs:
-      manifest_matrix: "${{ steps.manifest_create_matrix.outputs.matrix }}"
+      manifest_matrix: "${{ steps.manifest_create_matrix.outputs.output_matrix }}"
     steps:
       - name: Filter Matrix to Exclude `arch`
         id: filter_matrix
         run: |
           MATRIX='${{ inputs.matrix }}' | jq -c .
-          echo "matrix<<DELIMITER" >> ${GITHUB_OUTPUT}
+          echo "output_matrix<<EOF" >> ${GITHUB_OUTPUT}
           echo "{\"include\": $(echo $MATRIX | jq -c 'del(.arch)')}" >> $GITHUB_OUTPUT
-          echo "DELIMITER" >> ${GITHUB_OUTPUT}
+          echo "EOF" >> ${GITHUB_OUTPUT}
 
   manifest:
     name:
