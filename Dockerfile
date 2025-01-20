@@ -41,9 +41,6 @@ RUN set -eux; \
     docker-php-ext-install pcntl; \
     pecl install apcu redis; \
     docker-php-ext-enable redis apcu; \
-    docker-php-ext-configure imap --with-kerberos --with-imap-ssl; \
-    docker-php-ext-install imap; \
-    docker-php-ext-enable imap; \
     cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime; \
     echo "${TIMEZONE}" > /etc/timezone; \
     apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev tar; \
