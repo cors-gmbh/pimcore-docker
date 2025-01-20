@@ -47,11 +47,9 @@ jobs:
             IMAGE_NAME=nginx
           fi
           
-          if [ "${{ inputs.component }}" == "php" ]; then
-            DOCKERFILE=Dockerfile
-          elif [ "${{ inputs.component }}" == "php-debug" ]; then
-            DOCKERFILE=Dockerfile
-          elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
+          DOCKERFILE=Dockerfile
+          
+          if [ "${{ inputs.component }}" == "php-blackfire" ]; then
             DOCKERFILE=Dockerfile-blackfire
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
             DOCKERFILE=Dockerfile-supervisord
@@ -62,7 +60,7 @@ jobs:
           REGISTRY=ghcr.io/${{ github.repository }}
 
           docker build \
-            -f $DOCKERFILE
+            -f $DOCKERFILE \
             --tag $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
             --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
             --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
