@@ -118,8 +118,9 @@ jobs:
       - name: Filter Matrix to Exclude `arch`
         id: filter_matrix
         run: |
+          MATRIX='' | jq -c .
           echo "matrix<<DELIMITER" >> ${GITHUB_OUTPUT}
-          echo "$(echo ${{ inputs.matrix }} | jq -c 'del(.arch)')" >> $GITHUB_OUTPUT
+          echo "$(echo $MATRIX | jq -c 'del(.arch)')" >> $GITHUB_OUTPUT
           echo "DELIMITER" >> ${GITHUB_OUTPUT}
 
   manifest:
