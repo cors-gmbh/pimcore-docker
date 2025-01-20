@@ -25,7 +25,7 @@ jobs:
         id: convert_matrix
         run: |
           echo "matrix=$(echo '${{ inputs.matrix }}' | yq -o=json) >> $GITHUB_OUTPUT"
-          echo $GITHUB_OUTPUT
+          cat $GITHUB_OUTPUT
 
   build:
     name: Build ${{ inputs.component }}
