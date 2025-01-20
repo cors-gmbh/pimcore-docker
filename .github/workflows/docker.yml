@@ -24,6 +24,7 @@ jobs:
 
   build_php_debug:
     uses: ./.github/workflows/docker-build.yml
+    needs: build_php
     with:
       component: php-debug
       matrix: |
@@ -36,6 +37,7 @@ jobs:
 
   build_php_blackfire:
     uses: ./.github/workflows/docker-build.yml
+    needs: build_php
     with:
       component: php-blackfire
       matrix: |
@@ -47,6 +49,7 @@ jobs:
 
   build_supervisord:
     uses: ./.github/workflows/docker-build.yml
+    needs: build_php
     with:
       component: supervisord
       matrix: |
