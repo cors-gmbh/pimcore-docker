@@ -39,18 +39,18 @@ jobs:
         run: |
           FROM_IMAGE=""
           if [ "${{ inputs.component }}" == "php" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}
+            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-${{ matrix.php_type }}
           elif [ "${{ inputs.component }}" == "php-debug" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}-debug
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}:${{ matrix.php_version }}-LATEST
+            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-${{ matrix.php_type }}-debug
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-${{ matrix.php_type }}:${{ matrix.php_version }}-LATEST
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-fpm-blackfire
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.alpine }}-fpm:${{ matrix.php_version }}-LATEST
+            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-fpm-blackfire
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-fpm:${{ matrix.php_version }}-LATEST
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-supervisord
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.alpine }}-cli:${{ matrix.php_version }}-LATEST
+            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-supervisord
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-cli:${{ matrix.php_version }}-LATEST
           elif [ "${{ inputs.component }}" == "nginx" ]; then
-            IMAGE_NAME=nginx
+            IMAGE_NAME=nginx-${{ matrix.arch }}
           fi
           
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
@@ -68,7 +68,7 @@ jobs:
 
           if [ "${{ inputs.component }}" == "php-debug" ]; then
             DOCKERFILE=Dockerfile-debug
-          if [ "${{ inputs.component }}" == "php-blackfire" ]; then
+          elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
             DOCKERFILE=Dockerfile-blackfire
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
             DOCKERFILE=Dockerfile-supervisord
