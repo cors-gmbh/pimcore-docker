@@ -116,7 +116,7 @@ jobs:
       - name: Filter Matrix to Exclude `arch`
         id: filter_matrix
         run: |
-          echo '${{ inputs.matrix }}' | jq 'del(.arch)' > filtered_matrix.json
+          echo '${{ inputs.matrix }}' | tr '\n' ' ' | jq 'del(.arch)' > filtered_matrix.json
           echo "matrix=$(cat filtered_matrix.json)" >> $GITHUB_OUTPUT
     outputs:
       matrix: "${{ steps.manifest_create_matrix.outputs.matrix }}"
