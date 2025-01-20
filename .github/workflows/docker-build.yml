@@ -143,8 +143,7 @@ jobs:
             IMAGE_NAME=php-${{ matrix.php_type }}-debug
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
-            IMAGE_NAME=${{ matrix.alpine }}-php-fpm-blackfire
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_NAME=php-fpm-blackfire
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
             IMAGE_NAME=php-supervisord
