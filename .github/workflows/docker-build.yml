@@ -21,8 +21,13 @@ jobs:
     name: Build ${{ inputs.component }}
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
-      matrix: ${{ fromJson(inputs.matrix) }}
+      matrix: ${{ fromJson(steps.convert_matrix.outputs.matrix) }}
     steps:
+      - name: Convert Matrix to JSON
+        id: convert_matrix
+        run: |
+          echo "::set-output name=matrix::$(echo '${{ inputs.matrix }}' | yq -o=json)"
+
       - name: Checkout code
         uses: actions/checkout@v3
 
