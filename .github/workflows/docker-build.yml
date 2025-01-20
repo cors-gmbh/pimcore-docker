@@ -90,7 +90,7 @@ jobs:
 
           docker build \
             -f $DOCKERFILE \
-            --tag $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} 
+            --tag $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} \ 
             --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
             $(if [ -n "${{ env.FROM_IMAGE }}" ]; then echo "--build-arg FROM=${{ env.FROM_IMAGE }}"; fi) \
             --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
