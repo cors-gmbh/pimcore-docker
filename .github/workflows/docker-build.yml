@@ -37,18 +37,23 @@ jobs:
       - name: Set Image Name
         id: image_name
         run: |
+          FROM_IMAGE=""
           if [ "${{ inputs.component }}" == "php" ]; then
             IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}
           elif [ "${{ inputs.component }}" == "php-debug" ]; then
             IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}-debug
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
             IMAGE_NAME=php-alpine-${{ matrix.alpine }}-fpm-blackfire
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.alpine }}-fpm:${{ matrix.php_version }}-LATEST
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
             IMAGE_NAME=php-alpine-${{ matrix.alpine }}-supervisord
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.alpine }}-cli:${{ matrix.php_version }}-LATEST
           elif [ "${{ inputs.component }}" == "nginx" ]; then
             IMAGE_NAME=nginx
           fi
+          
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "FROM_IMAGE=$FROM_IMAGE" >> $GITHUB_ENV
 
       - name: Pull Latest Image for Cache
         run: |
@@ -59,7 +64,7 @@ jobs:
         id: build
         run: |
           DOCKERFILE=Dockerfile
-          
+
           if [ "${{ inputs.component }}" == "php-blackfire" ]; then
             DOCKERFILE=Dockerfile-blackfire
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
@@ -75,6 +80,7 @@ jobs:
             --cache-from $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
             --tag $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
             --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
+            $(if [ -n "${{ env.FROM_IMAGE }}" ]; then echo "--build-arg FROM=${{ env.FROM_IMAGE }}"; fi) \
             --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
             --build-arg ALPINE_VERSION=${{ matrix.alpine || '' }} \
             --build-arg IMAGICK_VERSION_FROM_SRC=${{ env.IMAGICK_VERSION_FROM_SRC || '' }} \
