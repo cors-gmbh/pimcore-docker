@@ -19,7 +19,7 @@ permissions:
 jobs:
   prepare_matrix:
     runs-on: ubuntu-latest
-    name: "Create a list of packages"
+    name: "Convert Build Matrix"
     steps:
       - name: Convert Matrix to JSON
         id: convert_matrix
@@ -33,7 +33,7 @@ jobs:
     needs: prepare_matrix
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
-      matrix: ${{ needs.prepare_matrix.outputs.matrix }}
+      matrix: ${{ fromJson(needs.prepare_matrix.outputs.matrix) }}
     steps:
       - name: Convert Matrix to JSON
         id: convert_matrix
