@@ -129,11 +129,9 @@ jobs:
       matrix: ${{ fromJson(inputs.matrix_manifest) }}
     steps:
       - name: Login to GitHub Container Registry
-        if: ${{ matrix.arch == 'amd' }}
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Create and Push Multi-Arch Manifest
-        if: ${{ matrix.arch == 'amd' }}
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
 
