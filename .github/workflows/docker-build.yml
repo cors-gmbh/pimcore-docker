@@ -9,6 +9,9 @@ on:
       matrix:
         required: true
         type: string
+      matrix_manifest:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -38,28 +41,35 @@ jobs:
         id: image_name
         run: |
           FROM_IMAGE=""
+          
           if [ "${{ inputs.component }}" == "php" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-${{ matrix.php_type }}
+            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "php-debug" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-${{ matrix.php_type }}-debug
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-${{ matrix.php_type }}:${{ matrix.php_version }}-LATEST
+            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}-debug
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-${{ matrix.php_type }}:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-fpm-blackfire
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-fpm:${{ matrix.php_version }}-LATEST
+            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.alpine }}-fpm-blackfire
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
-            IMAGE_NAME=php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-supervisord
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.arch }}-${{ matrix.alpine }}-cli:${{ matrix.php_version }}-LATEST
+            IMAGE_NAME=${{ matrix.arch }}-php-supervisord
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-cli:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "nginx" ]; then
-            IMAGE_NAME=nginx-${{ matrix.arch }}
+            IMAGE_NAME=${{ matrix.arch }}-nginx
+            IMAGE_TAG=${{ matrix.nginx_version }}-LATEST
           fi
           
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
           echo "FROM_IMAGE=$FROM_IMAGE" >> $GITHUB_ENV
+          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
 
       - name: Pull Latest Image for Cache
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
-          docker pull $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST || echo "No cache available"
+          docker pull $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} || echo "No cache available"
 
       - name: Build Docker Image
         id: build
@@ -80,7 +90,7 @@ jobs:
 
           docker build \
             -f $DOCKERFILE \
-            --tag $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
+            --tag $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} 
             --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
             $(if [ -n "${{ env.FROM_IMAGE }}" ]; then echo "--build-arg FROM=${{ env.FROM_IMAGE }}"; fi) \
             --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
@@ -91,7 +101,7 @@ jobs:
       - name: Push Docker Image
         id: push
         run: |
-          docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST
+            docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST
 
       - name: Get Image Digest
         id: get_digest
@@ -116,7 +126,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     strategy:
-      matrix: ${{ fromJson(inputs.matrix) }}
+      matrix: ${{ fromJson(inputs.matrix_manifest) }}
     steps:
       - name: Login to GitHub Container Registry
         if: ${{ matrix.arch == 'amd' }}
@@ -126,18 +136,28 @@ jobs:
         if: ${{ matrix.arch == 'amd' }}
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
-          
-          PHP_VERSION=${{ matrix.php_version }}
-          NGINX_VERSION=${{ matrix.nginx_version }}
-          ALPINE=${{ matrix.alpine }}
-          PHP_TYPE=${{ matrix.php_type }}
-          
-          IMAGE_TAG=${PHP_VERSION:-${NGINX_VERSION}}-LATEST
-          IMAGE_NAME=${{ inputs.component }}
+
+          if [ "${{ inputs.component }}" == "php" ]; then
+            IMAGE_NAME=php-${{ matrix.php_type }}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+          elif [ "${{ inputs.component }}" == "php-debug" ]; then
+            IMAGE_NAME=php-${{ matrix.php_type }}-debug
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+          elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
+            IMAGE_NAME=${{ matrix.alpine }}-php-fpm-blackfire
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+          elif [ "${{ inputs.component }}" == "supervisord" ]; then
+            IMAGE_NAME=php-supervisord
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+          elif [ "${{ inputs.component }}" == "nginx" ]; then
+            IMAGE_NAME=nginx
+            IMAGE_TAG=${{ matrix.nginx_version }}-LATEST
+          fi
           
           docker manifest create \
             $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
-            --amend $REGISTRY/$IMAGE_NAME-amd:$IMAGE_TAG \
-            --amend $REGISTRY/$IMAGE_NAME-arm:$IMAGE_TAG
+            --amend $REGISTRY/amd-$IMAGE_NAME:$IMAGE_TAG \
+            --amend $REGISTRY/arm-$IMAGE_NAME:$IMAGE_TAG
           
           docker manifest push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG

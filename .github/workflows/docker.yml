@@ -10,54 +10,76 @@ on:
   workflow_dispatch:
 
 jobs:
-#  build_php:
-#    uses: ./.github/workflows/docker-build.yml
-#    with:
-#      component: php
-#      matrix: |
-#        {
-#          "arch": ["amd", "arm"],
-#          "php_version": ["8.2", "8.3"],
-#          "php_type": ["fpm", "cli"],
-#          "alpine": ["3.20", "3.21"]
-#        }
-#
-#  build_php_debug:
-#    uses: ./.github/workflows/docker-build.yml
-#    needs: build_php
-#    with:
-#      component: php-debug
-#      matrix: |
-#        {
-#          "arch": ["amd", "arm"],
-#          "php_version": ["8.2", "8.3"],
-#          "php_type": ["fpm", "cli"],
-#          "alpine": ["3.20", "3.21"]
-#        }
-#
-#  build_php_blackfire:
-#    uses: ./.github/workflows/docker-build.yml
-#    needs: build_php
-#    with:
-#      component: php-blackfire
-#      matrix: |
-#        {
-#          "arch": ["amd", "arm"],
-#          "php_version": ["8.2", "8.3"],
-#          "alpine": ["3.20", "3.21"]
-#        }
-#
-#  build_supervisord:
-#    uses: ./.github/workflows/docker-build.yml
-#    needs: build_php
-#    with:
-#      component: supervisord
-#      matrix: |
-#        {
-#          "arch": ["amd", "arm"],
-#          "php_version": ["8.2", "8.3"],
-#          "alpine": ["3.20", "3.21"]
-#        }
+  build_php:
+    uses: ./.github/workflows/docker-build.yml
+    with:
+      component: php
+      matrix: |
+        {
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "php_type": ["fpm", "cli"],
+          "alpine": ["3.20", "3.21"]
+        }
+      matrix_manifest: |
+        {
+          "php_version": ["8.2", "8.3"],
+          "php_type": ["fpm", "cli"],
+          "alpine": ["3.20", "3.21"]
+        }
+
+  build_php_debug:
+    uses: ./.github/workflows/docker-build.yml
+    needs: build_php
+    with:
+      component: php-debug
+      matrix: |
+        {
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "php_type": ["fpm", "cli"],
+          "alpine": ["3.20", "3.21"]
+        }
+      matrix_manifest: |
+        {
+          "php_version": ["8.2", "8.3"],
+          "php_type": ["fpm", "cli"],
+          "alpine": ["3.20", "3.21"]
+        }
+
+  build_php_blackfire:
+    uses: ./.github/workflows/docker-build.yml
+    needs: build_php
+    with:
+      component: php-blackfire
+      matrix: |
+        {
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "alpine": ["3.20", "3.21"]
+        }
+      matrix_manifest: |
+        {
+          "php_version": ["8.2", "8.3"],
+          "alpine": ["3.20", "3.21"]
+        }
+
+  build_supervisord:
+    uses: ./.github/workflows/docker-build.yml
+    needs: build_php
+    with:
+      component: supervisord
+      matrix: |
+        {
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "alpine": ["3.20", "3.21"]
+        }
+      matrix_manifest: |
+        {
+          "php_version": ["8.2", "8.3"],
+          "alpine": ["3.20", "3.21"]
+        }
 
   build_nginx:
     uses: ./.github/workflows/docker-build.yml
@@ -66,5 +88,9 @@ jobs:
       matrix: |
         {
           "arch": ["amd", "arm"],
+          "nginx_version": ["1.25", "1.26"]
+        }
+      matrix_manifest: |
+        {
           "nginx_version": ["1.25", "1.26"]
         }
