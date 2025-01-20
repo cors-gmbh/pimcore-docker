@@ -42,6 +42,7 @@ jobs:
             IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}
           elif [ "${{ inputs.component }}" == "php-debug" ]; then
             IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}-debug
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}:${{ matrix.php_version }}-LATEST
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
             IMAGE_NAME=php-alpine-${{ matrix.alpine }}-fpm-blackfire
             FROM_IMAGE=ghcr.io/${{ github.repository }}/php-alpine-${{ matrix.alpine }}-fpm:${{ matrix.php_version }}-LATEST
@@ -65,6 +66,8 @@ jobs:
         run: |
           DOCKERFILE=Dockerfile
 
+          if [ "${{ inputs.component }}" == "php-debug" ]; then
+            DOCKERFILE=Dockerfile-debug
           if [ "${{ inputs.component }}" == "php-blackfire" ]; then
             DOCKERFILE=Dockerfile-blackfire
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
@@ -77,7 +80,6 @@ jobs:
 
           docker build \
             -f $DOCKERFILE \
-            --cache-from $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
             --tag $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
             --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
             $(if [ -n "${{ env.FROM_IMAGE }}" ]; then echo "--build-arg FROM=${{ env.FROM_IMAGE }}"; fi) \
