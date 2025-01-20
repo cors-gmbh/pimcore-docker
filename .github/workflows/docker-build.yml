@@ -119,31 +119,31 @@ jobs:
           echo '${{ inputs.matrix }}' | jq '[.[] | {php_version, php_type, alpine, nginx_version}] | unique' > filtered_matrix.json
           echo "matrix=$(cat filtered_matrix.json)" >> $GITHUB_OUTPUT
 
-    create-manifest:
-      runs-on: ubuntu-22.04
-      strategy:
-        matrix: ${{ fromJson(steps.filter_matrix.outputs.matrix) }}
-      steps:
-        - name: Login to GitHub Container Registry
-          run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Create and Push Multi-Arch Manifest
+        runs-on: ubuntu-22.04
+        strategy:
+          matrix: ${{ fromJson(steps.filter_matrix.outputs.matrix) }}
+        steps:
+          - name: Login to GitHub Container Registry
+            run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-        - name: Create and Push Multi-Arch Manifest
-          run: |
-            REGISTRY=ghcr.io/${{ github.repository }}
-
-            # Extract values from matrix
-            PHP_VERSION=${{ matrix.php_version }}
-            NGINX_VERSION=${{ matrix.nginx_version }}
-            ALPINE=${{ matrix.alpine }}
-            PHP_TYPE=${{ matrix.php_type }}
-
-            # Determine the image name and tag
-            IMAGE_TAG=${PHP_VERSION:-${NGINX_VERSION}}-LATEST
-            IMAGE_NAME=${{ inputs.component }}
-
-            docker manifest create \
-              $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
-              --amend $REGISTRY/$IMAGE_NAME-amd:$IMAGE_TAG \
-              --amend $REGISTRY/$IMAGE_NAME-arm:$IMAGE_TAG
-
-            docker manifest push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          - name: Create and Push Multi-Arch Manifest
+            run: |
+              REGISTRY=ghcr.io/${{ github.repository }}
+  
+              # Extract values from matrix
+              PHP_VERSION=${{ matrix.php_version }}
+              NGINX_VERSION=${{ matrix.nginx_version }}
+              ALPINE=${{ matrix.alpine }}
+              PHP_TYPE=${{ matrix.php_type }}
+  
+              # Determine the image name and tag
+              IMAGE_TAG=${PHP_VERSION:-${NGINX_VERSION}}-LATEST
+              IMAGE_NAME=${{ inputs.component }}
+  
+              docker manifest create \
+                $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
+                --amend $REGISTRY/$IMAGE_NAME-amd:$IMAGE_TAG \
+                --amend $REGISTRY/$IMAGE_NAME-arm:$IMAGE_TAG
+  
+              docker manifest push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
