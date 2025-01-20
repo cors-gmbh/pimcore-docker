@@ -3,9 +3,9 @@ name: CORS Pimcore Docker Build
 on:
   push:
     branches:
-      - '7.0'
+      - "7.0"
     tags:
-      - '*'
+      - "*"
   pull_request:
   workflow_dispatch:
 
@@ -16,10 +16,10 @@ jobs:
       component: php
       matrix: |
         {
-          "arch": ['amd', 'arm'],
-          "php_version": ['8.2', '8.3'],
-          "php_type": ['fpm', 'cli'],
-          "alpine": ['3.20', '3.21']
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "php_type": ["fpm", "cli"],
+          "alpine": ["3.20", "3.21"]
         }
 
   build_php_debug:
@@ -29,10 +29,10 @@ jobs:
       component: php-debug
       matrix: |
         {
-          "arch": ['amd', 'arm'],
-          "php_version": ['8.2', '8.3'],
-          "php_type": ['fpm', 'cli'],
-          "alpine": ['3.20', '3.21']
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "php_type": ["fpm", "cli"],
+          "alpine": ["3.20", "3.21"]
         }
 
   build_php_blackfire:
@@ -42,9 +42,9 @@ jobs:
       component: php-blackfire
       matrix: |
         {
-          "arch": ['amd', 'arm'],
-          "php_version": ['8.2', '8.3'],
-          "alpine": ['3.20', '3.21']
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "alpine": ["3.20", "3.21"]
         }
 
   build_supervisord:
@@ -54,9 +54,9 @@ jobs:
       component: supervisord
       matrix: |
         {
-          "arch": ['amd', 'arm'],
-          "php_version": ['8.2', '8.3'],
-          "alpine": ['3.20', '3.21']
+          "arch": ["amd", "arm"],
+          "php_version": ["8.2", "8.3"],
+          "alpine": ["3.20", "3.21"]
         }
 
   build_nginx:
@@ -65,6 +65,6 @@ jobs:
       component: nginx
       matrix: |
         {
-          "arch": ['amd', 'arm'],
-          "nginx_version": ['1.25', '1.26']
+          "arch": ["amd", "arm"],
+          "nginx_version": ["1.25", "1.26"]
         }

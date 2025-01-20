@@ -109,20 +109,23 @@ jobs:
           push-to-registry: true
 
   manifest_create_matrix:
-    name: Create Matrix for Manifest Build
+    name: Manifest Matrix
     needs: build
     runs-on: ubuntu-22.04
     steps:
       - name: Filter Matrix to Exclude `arch`
         id: filter_matrix
         run: |
-          echo '${{ inputs.matrix }}' | jq '[.[] | {php_version, php_type, alpine, nginx_version}] | unique' > filtered_matrix.json
+          echo '${{ inputs.matrix }}' | jq 'del(.arch)' > filtered_matrix.json
           echo "matrix=$(cat filtered_matrix.json)" >> $GITHUB_OUTPUT
     outputs:
       matrix: "${{ steps.manifest_create_matrix.outputs.matrix }}"
 
   manifest:
-    name: Create and Push Multi-Arch Manifest
+    name:
+      Manifest 
+      ${{ inputs.component }}
+      ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
     needs: manifest_create_matrix
     runs-on: ubuntu-22.04
     strategy:

@@ -4,19 +4,16 @@ stages:
   - build_php_blackfire
   - build_supervisord
   - build_nginx
-  - build_varnish
   - manifest_php
   - manifest_php_debug
   - manifest_php_blackfire
   - manifest_supervisord
   - manifest_nginx
-  - manifest_varnish
   - release_php
   - release_php_debug
   - release_php_blackfire
   - release_supervisord
   - release_nginx
-  - release_varnish
   - release_manifest_php
   - release_manifest_php_debug
   - release_manifest_php_blackfire
@@ -292,23 +289,6 @@ build_nginx:
     - docker push "$IMAGE_NAME:$NGINX_VERSION-LATEST"
     - docker push "$IMAGE_NAME_GCP:$NGINX_VERSION-LATEST"
 
-build_varnish:
-  extends: .build
-  stage: build_varnish
-  except:
-    - tags
-  script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
-    - IMAGE_NAME_GCP=$CI_REGISTRY_IMAGE/varnish
-    - docker build 
-        -f Dockerfile-varnish 
-      --tag $IMAGE_NAME:LATEST 
-      --tag $IMAGE_NAME_GCP:LATEST 
-      .
-
-    - docker push "$IMAGE_NAME:LATEST"
-    - docker push "$IMAGE_NAME_GCP:LATEST"
-
 manifest_php:
   extends:
     - .manifest
@@ -552,30 +532,6 @@ release_nginx:
     - docker push $IMAGE_NAME:$NGINX_VERSION-LATEST
     - docker push $IMAGE_NAME_GCP:$NGINX_VERSION-$TAG
     - docker push $IMAGE_NAME_GCP:$NGINX_VERSION-LATEST
-
-release_varnish:
-  extends: .build
-  stage: release_varnish
-  only:
-    refs:
-      - tags
-  variables:
-    TAG: $CI_COMMIT_REF_NAME
-  script:
-    - IMAGE_NAME=$CI_REGISTRY_IMAGE/varnish
-    - IMAGE_NAME_GCP=$GCP_REGISTRY_IMAGE/varnish
-    - docker build
-        -f Dockerfile-varnish
-        --tag $IMAGE_NAME:LATEST
-        --tag $IMAGE_NAME:$TAG
-        --tag $IMAGE_NAME_GCP:LATEST
-        --tag $IMAGE_NAME_GCP:$TAG 
-      .
-
-    - docker push $IMAGE_NAME:LATEST
-    - docker push $IMAGE_NAME:$TAG
-    - docker push $IMAGE_NAME_GCP:LATEST
-    - docker push $IMAGE_NAME_GCP:$TAG
 
 release_manifest_php:
   extends:
