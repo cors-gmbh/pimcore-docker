@@ -96,6 +96,6 @@ jobs:
       - name: Generate Artifact Attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ghcr.io/${{ github.repository }}/$IMAGE_NAME
+          subject-name: ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ env.IMAGE_DIGEST }}
           push-to-registry: true
