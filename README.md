@@ -5,7 +5,8 @@ open-source digital experience platform (DXP). It enables developers to quickly 
 projects using a preconfigured Docker setup.
 
 These optimized Docker images, based on Alpine Linux, are designed to run Pimcore in production environments,
-specifically on Google Kubernetes Engine.
+specifically on Google Kubernetes Engine. This is also a Multi-Arch Build for ARM (Mainly Apple Silicon) and x86-64 
+(AMD) Systems. 
 
 As part of our journey to Kubernetes, we’ve been running this setup since 2021, and it has proven reliable. We share
 this knowledge for free because we believe in open source, Pimcore, and the power of collaboration.
