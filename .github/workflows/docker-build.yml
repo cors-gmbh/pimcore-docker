@@ -101,13 +101,13 @@ jobs:
       - name: Push Docker Image
         id: push
         run: |
-            docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST
+            docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
 
       - name: Get Image Digest
         id: get_digest
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST | cut -d '@' -f 2)
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} | cut -d '@' -f 2)
           echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_ENV
           echo "IMAGE_DIGEST=$DIGEST" # Output to logs for debugging
 
