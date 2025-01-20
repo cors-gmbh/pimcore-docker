@@ -12,6 +12,9 @@ on:
       matrix_manifest:
         required: true
         type: string
+      release_tag:
+        required: false
+        type: string # Optional input for specifying a release tag.
 
 permissions:
   contents: read
@@ -37,29 +40,30 @@ jobs:
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Set Image Name
+      - name: Set Image Name and Tag
         id: image_name
         run: |
           FROM_IMAGE=""
+          RELEASE_TAG="${{ inputs.release_tag || env.GITHUB_REF_NAME }}"
           
           if [ "${{ inputs.component }}" == "php" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "php-debug" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}-debug
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-${{ matrix.php_type }}:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-${{ matrix.php_type }}:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-fpm-blackfire
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-supervisord
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-cli:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-cli:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "nginx" ]; then
             IMAGE_NAME=${{ matrix.arch }}-nginx
-            IMAGE_TAG=${{ matrix.nginx_version }}-LATEST
+            IMAGE_TAG=${{ matrix.nginx_version }}-${RELEASE_TAG}
           fi
           
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
@@ -102,7 +106,7 @@ jobs:
       - name: Push Docker Image
         id: push
         run: |
-            docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
+          docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
 
       - name: Get Image Digest
         id: get_digest
@@ -136,21 +140,23 @@ jobs:
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
 
+          RELEASE_TAG="${{ inputs.release_tag || env.GITHUB_REF_NAME }}"
+
           if [ "${{ inputs.component }}" == "php" ]; then
             IMAGE_NAME=php-${{ matrix.php_type }}
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "php-debug" ]; then
             IMAGE_NAME=php-${{ matrix.php_type }}-debug
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
             IMAGE_NAME=php-fpm-blackfire
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
             IMAGE_NAME=php-supervisord
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "nginx" ]; then
             IMAGE_NAME=nginx
-            IMAGE_TAG=${{ matrix.nginx_version }}-LATEST
+            IMAGE_TAG=${{ matrix.nginx_version }}-${RELEASE_TAG}
           fi
           
           docker manifest create \
