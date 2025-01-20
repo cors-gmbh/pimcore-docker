@@ -1,0 +1,67 @@
+name: Reusable Build Workflow
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        required: true
+        type: string
+      matrix:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build ${{ inputs.component }}
+    runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
+    strategy:
+      matrix: ${{ fromJson(inputs.matrix) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Docker Image
+        id: build
+        run: |
+          if [ "${{ inputs.component }}" == "php" ]; then
+            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}
+          elif [ "${{ inputs.component }}" == "php-debug" ]; then
+            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-${{ matrix.php_type }}-debug
+          elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
+            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-fpm-blackfire
+          elif [ "${{ inputs.component }}" == "supervisord" ]; then
+            IMAGE_NAME=php-alpine-${{ matrix.alpine }}-supervisord
+          elif [ "${{ inputs.component }}" == "nginx" ]; then
+            IMAGE_NAME=nginx
+          fi
+
+          REGISTRY=ghcr.io/${{ github.repository }}
+
+          docker build \
+            --tag $REGISTRY/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST \
+            --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
+            --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
+            --build-arg ALPINE_VERSION=${{ matrix.alpine || '' }} \
+            --build-arg IMAGICK_VERSION_FROM_SRC=${{ env.IMAGICK_VERSION_FROM_SRC || '' }} \
+            --build-arg NGINX_VERSION=${{ matrix.nginx_version || '' }} .
+
+      - name: Push Docker Image
+        id: push
+        run: |
+          docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ matrix.php_version || matrix.nginx_version }}-LATEST
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/$IMAGE_NAME
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
