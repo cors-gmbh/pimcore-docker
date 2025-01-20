@@ -37,13 +37,13 @@ jobs:
         {
           "arch": ["amd", "arm"],
           "php_version": ["8.2", "8.3"],
-          "php_type": ["fpm", "cli"],
+          "php_type": ["fpm"],
           "alpine": ["3.20", "3.21"]
         }
       matrix_manifest: |
         {
           "php_version": ["8.2", "8.3"],
-          "php_type": ["fpm", "cli"],
+          "php_type": ["fpm"],
           "alpine": ["3.20", "3.21"]
         }
 
