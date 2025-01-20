@@ -24,7 +24,7 @@ jobs:
       - name: Convert Matrix to JSON
         id: convert_matrix
         run: |
-          echo "::set-output name=matrix::$(echo '${{ inputs.matrix }}' | yq -o=json)"
+          echo "matrix=$(echo '${{ inputs.matrix }}' | yq -o=json) >> $GITHUB_OUTPUT"
     outputs:
       matrix: "${{ steps.convert_matrix.outputs.matrix }}"
 
