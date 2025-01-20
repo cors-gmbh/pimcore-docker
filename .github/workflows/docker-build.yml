@@ -120,7 +120,7 @@ jobs:
         run: |
           MATRIX='${{ inputs.matrix }}' | jq -c .
           echo "output_matrix<<EOF" >> ${GITHUB_OUTPUT}
-          echo "{\"include\": $(echo $MATRIX | jq -c 'del(.arch)')}" >> $GITHUB_OUTPUT
+          echo "{\"include\": [$(echo $MATRIX | jq -c 'del(.arch)')]}" >> $GITHUB_OUTPUT
           echo "EOF" >> ${GITHUB_OUTPUT}
 
   manifest:
