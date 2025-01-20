@@ -112,14 +112,14 @@ jobs:
     name: Manifest Matrix
     needs: build
     runs-on: ubuntu-22.04
+    outputs:
+      manifest_matrix: "${{ steps.manifest_create_matrix.outputs.matrix }}"
     steps:
       - name: Filter Matrix to Exclude `arch`
         id: filter_matrix
         run: |
           MATRIX='${{ inputs.matrix }}' | jq -c .
           echo "matrix=$(echo $MATRIX | jq -c 'del(.arch)')" >> $GITHUB_OUTPUT
-    outputs:
-      matrix: "${{ steps.manifest_create_matrix.outputs.matrix }}"
 
   manifest:
     name:
@@ -129,7 +129,7 @@ jobs:
     needs: manifest_create_matrix
     runs-on: ubuntu-22.04
     strategy:
-      matrix: ${{ fromJson(needs.manifest_create_matrix.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.manifest_create_matrix.outputs.manifest_matrix) }}
     steps:
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
