@@ -16,18 +16,16 @@ permissions:
   attestations: write
   id-token: write
 
+env:
+  IMAGICK_VERSION_FROM_SRC: 28f27044e435a2b203e32675e942eb8de620ee58
+
 jobs:
   build:
-    name: Build ${{ inputs.component }}
+    name: Build ${{ inputs.component }} for arch=${{ matrix.arch }}, version=${{ matrix.php_version || matrix.nginx_version }}, type=${{ matrix.php_type || 'N/A' }}, alpine=${{ matrix.alpine || 'N/A' }}
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJson(inputs.matrix) }}
     steps:
-      - name: Convert Matrix to JSON
-        id: convert_matrix
-        run: |
-          echo "::set-output name=matrix::$(echo '${{ inputs.matrix }}' | yq -o=json)"
-
       - name: Checkout code
         uses: actions/checkout@v3
 
