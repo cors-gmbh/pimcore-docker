@@ -3,7 +3,7 @@ name: CORS Pimcore Docker Build
 on:
   push:
     branches:
-      - 7.0
+      - '7.0'
     tags:
       - '*'
   pull_request:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_php:
-    uses: ./.github/actions/docker-build.yml
+    uses: ./.github/workflows/docker-build.yml
     with:
       component: php
       matrix: |
@@ -21,7 +21,7 @@ jobs:
         alpine: ['3.20', '3.21']
 
   build_php_debug:
-    uses: ./.github/actions/docker-build.yml
+    uses: ./.github/workflows/docker-build.yml
     with:
       component: php-debug
       matrix: |
@@ -31,7 +31,7 @@ jobs:
         alpine: ['3.20', '3.21']
 
   build_php_blackfire:
-    uses: ./.github/actions/docker-build.yml
+    uses: ./.github/workflows/docker-build.yml
     with:
       component: php-blackfire
       matrix: |
@@ -40,7 +40,7 @@ jobs:
         alpine: ['3.20', '3.21']
 
   build_supervisord:
-    uses: ./.github/actions/docker-build.yml
+    uses: ./.github/workflows/docker-build.yml
     with:
       component: supervisord
       matrix: |
@@ -49,7 +49,7 @@ jobs:
         alpine: ['3.20', '3.21']
 
   build_nginx:
-    uses: ./.github/actions/docker-build.yml
+    uses: ./.github/workflows/docker-build.yml
     with:
       component: nginx
       matrix: |
