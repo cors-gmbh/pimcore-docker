@@ -1,3 +1,5 @@
+[![CORS](https://github.com/cors-gmbh/.github/blob/dc0f9620a08711cfdcdbed7ec274b1675a29ef50/cors-we-want-you-3.jpg?raw=true)]([https://codecademy.com](https://cors.gmbh/jobs))
+
 # CORS Pimcore Docker Images
 
 This repository provides a Docker-based environment for running and managing [Pimcore](https://pimcore.com), a leading
@@ -16,6 +18,7 @@ Cheers Dominik :)
 ## Table of Contents
 
 - [Features](#features)
+- [Versioning](#versioning)
 - [Available Images](#available-images)
 - [Getting Started](#getting-started)
 - [Contributing](#contributing)
@@ -28,6 +31,14 @@ Cheers Dominik :)
 - ***Production-Ready***: Suitable for deployment in production environments with best practices incorporated.
 - ***Development-Ready***: Use the same image in development as for production
 
+## Versioning
+
+We currently build the images for following Versions:
+
+ - ***Alpine***: 3.20, 3.21
+ - ***PHP***: 8.2, 8.3, 8.4
+ - ***Variants***: CLI, FPM, FPM-Debug, Supervisord, FPM-Blackfire
+
 ## Available Images
 
 - ***PHP-FPM***: Configured with necessary extensions and settings for running Pimcore.
@@ -35,6 +46,14 @@ Cheers Dominik :)
 - ***Nginx***: Optimized web server configuration to serve Pimcore applications efficiently.
 - ***Supervisord***: Process control system to manage and monitor processes like PHP-FPM and Nginx.
 - ***Blackfire***: Integrated for performance profiling and monitoring.
+
+Images are named like:
+
+- ***FPM***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.2-alpine3.21-7.0-LATEST
+- ***FPM-Debug***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.2-alpine3.21-7.0-LATEST
+- ***Supervisord***: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.2-alpine3.21-7.0-LATEST
+- ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.2-alpine3.21-7.0-LATEST
+- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.26-7.0-LATEST
 
 ## Getting Started
 
@@ -73,7 +92,7 @@ services:
       - php-debug
 
   php:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.2-alpine3.21-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.2-alpine3.21-7.0-LATEST
     command: 'php-fpm'
     entrypoint: docker-php-entrypoint
     depends_on:
@@ -82,7 +101,7 @@ services:
       - ./:/var/www/html:cached
 
   php-debug:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.2-alpine3.21-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.2-alpine3.21-7.0-LATEST
     command: 'php-fpm'
     entrypoint: xdebug-entrypoint
     depends_on:
@@ -96,7 +115,7 @@ services:
       - PHP_IDE_CONFIG=serverName=localhost
 
   supervisord:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.2-alpine3.21-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.2-alpine3.21-7.0-LATEST
     depends_on:
       - db
     volumes:
