@@ -113,7 +113,7 @@ jobs:
       Manifest
       ${{ inputs.component }}
       ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
-    needs: manifest_create_matrix
+    needs: build
     runs-on: ubuntu-22.04
     strategy:
       matrix: ${{ fromJson(inputs.matrix) }}
