@@ -108,8 +108,8 @@ jobs:
           subject-digest: ${{ env.IMAGE_DIGEST }}
           push-to-registry: true
 
-  manifest:
-    name: Create and Push Multi-Arch Manifest
+  manifest_create_matrix:
+    name: Create Matrix for Manifest Build
     needs: build
     runs-on: ubuntu-22.04
     steps:
@@ -118,11 +118,17 @@ jobs:
         run: |
           echo '${{ inputs.matrix }}' | jq '[.[] | {php_version, php_type, alpine, nginx_version}] | unique' > filtered_matrix.json
           echo "matrix=$(cat filtered_matrix.json)" >> $GITHUB_OUTPUT
+    outputs:
+      matrix: "${{ steps.manifest_create_matrix.outputs.matrix }}"
 
+  manifest:
+    name: Create and Push Multi-Arch Manifest
+    needs: manifest_create_matrix
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix: ${{ fromJson(needs.manifest_create_matrix.outputs.matrix) }}
+    steps:
       - name: Create and Push Multi-Arch Manifest
-        runs-on: ubuntu-22.04
-        strategy:
-          matrix: ${{ fromJson(steps.filter_matrix.outputs.matrix) }}
         steps:
           - name: Login to GitHub Container Registry
             run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
