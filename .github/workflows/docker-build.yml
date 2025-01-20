@@ -50,7 +50,7 @@ jobs:
             FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-${{ matrix.php_type }}:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
-            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.alpine }}-fpm-blackfire
+            IMAGE_NAME=${{ matrix.arch }}-php-fpm-blackfire
             FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-LATEST
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
