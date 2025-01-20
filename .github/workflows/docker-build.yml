@@ -23,9 +23,7 @@ jobs:
   build:
     name: >
       Build ${{ inputs.component }}
-      ${{ matrix.arch }}/
-      ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}
-      ${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
+      ${{ matrix.arch }}/${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJson(inputs.matrix) }}
