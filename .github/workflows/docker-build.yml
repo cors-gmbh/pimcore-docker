@@ -118,14 +118,12 @@ jobs:
       - name: Filter Matrix to Exclude `arch`
         id: filter_matrix
         run: |
-          MATRIX='${{ inputs.matrix }}' | jq -c .
-          echo "output_matrix<<EOF" >> ${GITHUB_OUTPUT}
-          echo "{\"include\": [$(echo $MATRIX | jq -c 'del(.arch)')]}" >> $GITHUB_OUTPUT
-          echo "EOF" >> ${GITHUB_OUTPUT}
+          MATRIX=$(echo '${{ inputs.matrix }}' | jq '[.[] | del(.arch)] | unique')
+          echo "output_matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   manifest:
     name:
-      Manifest 
+      Manifest
       ${{ inputs.component }}
       ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
     needs: manifest_create_matrix
@@ -139,20 +137,18 @@ jobs:
       - name: Create and Push Multi-Arch Manifest
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
-
-          # Extract values from matrix
+          
           PHP_VERSION=${{ matrix.php_version }}
           NGINX_VERSION=${{ matrix.nginx_version }}
           ALPINE=${{ matrix.alpine }}
           PHP_TYPE=${{ matrix.php_type }}
-
-          # Determine the image name and tag
+          
           IMAGE_TAG=${PHP_VERSION:-${NGINX_VERSION}}-LATEST
           IMAGE_NAME=${{ inputs.component }}
-
+          
           docker manifest create \
             $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
             --amend $REGISTRY/$IMAGE_NAME-amd:$IMAGE_TAG \
             --amend $REGISTRY/$IMAGE_NAME-arm:$IMAGE_TAG
-
+          
           docker manifest push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
