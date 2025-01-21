@@ -25,7 +25,7 @@ jobs:
           "php_type": ["fpm", "cli"],
           "alpine": ["3.20", "3.21"]
         }
-      release_tag: ${{ github.event_name == 'create' && github.event.ref_type == 'tag' && github.ref_name || format('{0}-LATEST', github.ref_name) }}
+      release_tag: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_php_debug:
     uses: ./.github/workflows/docker-build.yml
@@ -45,7 +45,7 @@ jobs:
           "php_type": ["fpm"],
           "alpine": ["3.20", "3.21"]
         }
-      release_tag: ${{ github.event_name == 'create' && github.event.ref_type == 'tag' && github.ref_name || format('{0}-LATEST', github.ref_name) }}
+      release_tag: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_php_blackfire:
     uses: ./.github/workflows/docker-build.yml
@@ -63,7 +63,7 @@ jobs:
           "php_version": ["8.2", "8.3"],
           "alpine": ["3.20", "3.21"]
         }
-      release_tag: ${{ github.event_name == 'create' && github.event.ref_type == 'tag' && github.ref_name || format('{0}-LATEST', github.ref_name) }}
+      release_tag: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_supervisord:
     uses: ./.github/workflows/docker-build.yml
@@ -96,4 +96,4 @@ jobs:
         {
           "nginx_version": ["1.25", "1.26"]
         }
-      release_tag: ${{ github.event_name == 'create' && github.event.ref_type == 'tag' && github.ref_name || format('{0}-LATEST', github.ref_name) }}
+      release_tag: ${{ github.event_name == 'release' && startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
