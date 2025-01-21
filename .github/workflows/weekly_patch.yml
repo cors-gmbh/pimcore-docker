@@ -1,0 +1,45 @@
+name: Weekly Patch Release
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch: ~
+
+jobs:
+  create_patch_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Fetch Tags
+        run: git fetch --tags
+
+      - name: Get Latest Tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1` || echo "0.0.0")
+          echo "Latest tag: $latest_tag"
+          echo "latest_tag=$latest_tag" >> $GITHUB_ENV
+
+      - name: Calculate Next Patch Version
+        id: calculate_next_patch
+        run: |
+          latest_tag=${{ env.latest_tag }}
+
+          # Extrahiere die Major-, Minor- und Patch-Versionen
+          major=$(echo $latest_tag | cut -d '.' -f1)
+          minor=$(echo $latest_tag | cut -d '.' -f2)
+          patch=$(echo $latest_tag | cut -d '.' -f3)
+
+          next_patch=$((patch + 1))
+          new_tag="${major}.${minor}.${next_patch}"
+
+          echo "Next patch version: $new_tag"
+          echo "new_tag=$new_tag" >> $GITHUB_ENV
+
+      - name: Create New Tag
+        run: |
+          git tag ${{ env.new_tag }}
+          git push origin ${{ env.new_tag }}
