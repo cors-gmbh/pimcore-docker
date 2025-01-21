@@ -143,31 +143,28 @@ purposes:
 - ***Node***: To build webpack encore and copy it to the PHP Containers and NGINX.
 
 ```Dockerfile
+ARG PHP_VERSION
+ARG NGINX_VERSION
 ARG NODE_VERSION=22
 ARG DOCKER_BASE_VERSION
-ARG NGINX_VERSION
-ARG PHP_VERSION
 ARG ALPINE_VERSION
-ARG REGISTRY_URL
 
-FROM node:${NODE_VERSION}-alpine3.16 AS cors_node
+FROM node:${NODE_VERSION}-alpine AS cors_node
 
-RUN apk add --update python3 make g++\
+RUN apk add --update python3 py3-setuptools make g++\
    && rm -rf /var/cache/apk/*
 
 WORKDIR /var/www/html
-COPY package.json yarn.lock postcss.config.js webpack.config.js ./
+COPY package.json package-lock.json postcss.config.js webpack.config.js tsconfig.json ./
 RUN set -eux; \
-    yarn install; \
-    yarn cache clean;
+    npm install;
 
-COPY assets /var/www/html/assets
-COPY public/app /var/www/html/public/app
+COPY themes /var/www/html/themes
 
 RUN set -eux; \
-    yarn run encore prod
+    npm run build;
 
-FROM ${REGISTRY_URL}/php-alpine-${ALPINE_VERSION}-fpm:${PHP_VERSION}-${DOCKER_BASE_VERSION} as cors_php
+FROM ghcr.io/cors-gmbh/pimcore-docker/php-fpm:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php
 
 WORKDIR /var/www/html
 
@@ -180,12 +177,14 @@ ARG COMPOSER_AUTH
 USER www-data
 
 COPY --chown=www-data:www-data composer.* ./
-COPY --chown=www-data:www-data lib lib/
+COPY --chown=www-data:www-data bin bin/
 
 RUN set -eux; \
-    COMPOSER_MEMORY_LIMIT=-1 composer install --prefer-dist --no-scripts --no-progress;
+    COMPOSER_MEMORY_LIMIT=-1 composer install --prefer-dist --no-scripts --no-progress --no-dev; \
+    mkdir -p var/cache var/log public/bundles; \
+    chmod +x bin/console; \
+    sync;
 
-COPY --chown=www-data:www-data bin bin/
 COPY --chown=www-data:www-data public/index.php public/index.php
 COPY --chown=www-data:www-data config config/
 COPY --chown=www-data:www-data src src/
@@ -196,52 +195,52 @@ COPY --chown=www-data:www-data var var/
 COPY --chown=www-data:www-data .env .env
 
 RUN set -eux; \
-    chmod +x bin/console; \
-    php -d memory_limit=-1 bin/console cache:clear --env=$APP_ENV -vvv; \
-    mkdir -p var/cache var/log; \
-    sleep 1; \
+    bin/console cache:clear --env=$APP_ENV; \
     bin/console assets:install; \
     PIMCORE_DISABLE_CACHE=1 bin/console pimcore:build:classes; \
-    COMPOSER_MEMORY_LIMIT=-1 composer dump-autoload --classmap-authoritative --optimize; \
+    COMPOSER_MEMORY_LIMIT=-1 composer dump-autoload --classmap-authoritative; \
     sync;
 
 COPY --chown=www-data:www-data --from=cors_node /var/www/html/public public/
-COPY --chown=www-data:www-data public/pimcore public/pimcore
 
-FROM ${REGISTRY_URL}/php-alpine-${ALPINE_VERSION}-supervisord:${PHP_VERSION}-${DOCKER_BASE_VERSION} as cors_php_supervisord
+FROM ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php_supervisord
 
+COPY .docker/supervisord/project.conf /etc/supervisor/conf.d/project.conf
 COPY .docker/supervisord/coreshop.conf /etc/supervisor/conf.d/coreshop.conf
+COPY .docker/supervisord/pimcore.conf /etc/supervisor/conf.d/pimcore.conf
 
 ARG APP_ENV=prod
 ENV APP_ENV=$APP_ENV
 ENV APP_DEBUG=0
 
+USER www-data
+
 COPY --from=cors_php /var/www/html /var/www/html
 
-FROM ${REGISTRY_URL}/php-alpine-${ALPINE_VERSION}-cli:${PHP_VERSION}-${DOCKER_BASE_VERSION} as cors_php_cli
+FROM ghcr.io/cors-gmbh/pimcore-docker/php-cli:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php_cli
 
 ARG APP_ENV=prod
 ENV APP_ENV=$APP_ENV
 ENV APP_DEBUG=0
 
+USER www-data
+
 COPY --from=cors_php /var/www/html /var/www/html
 
-
-FROM ${REGISTRY_URL}/php-alpine-${ALPINE_VERSION}-fpm-blackfire:${PHP_VERSION}-${DOCKER_BASE_VERSION} as cors_php_blackfire
+FROM ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php_blackfire
 
 ARG APP_ENV=prod
 ENV APP_ENV=$APP_ENV
 ENV APP_DEBUG=0
 
+USER www-data
+
 COPY --from=cors_php /var/www/html /var/www/html
 
-FROM ${REGISTRY_URL}/nginx:${NGINX_VERSION}-${DOCKER_BASE_VERSION} AS cors_nginx
+FROM ghcr.io/cors-gmbh/pimcore-docker/nginx:${NGINX_VERSION}-${DOCKER_BASE_VERSION} AS cors_nginx
 
 COPY --from=cors_php /var/www/html/public public/
 COPY --from=cors_node /var/www/html/public public/
-COPY public/.well-known public/.well-known
-
-COPY .docker/nginx/pimcore-default.conf /etc/nginx/conf.d/default.conf
 ```
 
 ## Contributing
