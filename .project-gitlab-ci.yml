@@ -20,13 +20,12 @@ variables:
   TEST_LINT_YAML: "true"
   TEST_LINT_CONTAINER: "true"
   GCP_URL: europe-west3-docker.pkg.dev
-  TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
   REGISTRY_URL: $GCP_URL/cors-wolke/cors/docker
   ADDITIONAL_BRANCH: any-additional-branch-to-build
 
 test:
   stage: test
-  image: $TEST_IMAGE:$PHP_VERSION-$DOCKER_BASE_VERSION
+  image: ghcr.io/cors-gmbh/pimcore-docker/php-cli:$PHP_VERSION-alpine$ALPINE_VERSION-$DOCKER_BASE_VERSION
   variables:
     DATABASE_HOST: ""
     DATABASE_PORT: ""
