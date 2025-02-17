@@ -39,7 +39,24 @@ jobs:
           echo "Next patch version: $new_tag"
           echo "new_tag=$new_tag" >> $GITHUB_ENV
 
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
       - name: Create New Tag
         run: |
-          git tag ${{ env.new_tag }}
-          git push origin ${{ env.new_tag }}
+          if git rev-parse ${{ env.new_tag }} >/dev/null 2>&1; then
+            echo "Tag already exists. Skipping."
+          else
+            git tag ${{ env.new_tag }}
+            git push origin ${{ env.new_tag }}
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ env.new_tag }} \
+            --title "Release ${{ env.new_tag }}" \
+            --notes "Automated weekly patch release."
