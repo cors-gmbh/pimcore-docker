@@ -50,7 +50,7 @@ jobs:
             echo "Tag already exists. Skipping."
           else
             git tag ${{ env.new_tag }}
-            git push origin ${{ env.new_tag }}
+            git push origin refs/tags/${{ env.new_tag }}
           fi
 
       - name: Create GitHub Release
