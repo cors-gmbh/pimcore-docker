@@ -60,3 +60,4 @@ jobs:
           gh release create ${{ env.new_tag }} \
             --title "Release ${{ env.new_tag }}" \
             --notes "Automated weekly patch release."
+          gh workflow run docker.yml --ref ${{ env.new_tag }}
