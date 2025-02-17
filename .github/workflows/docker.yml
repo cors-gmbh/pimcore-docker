@@ -6,6 +6,8 @@ on:
       - "7.0" 
     tags:
       - "*"
+  release:
+    types: [ published ]
   schedule:
     - cron: "0 2 * * *"
 
