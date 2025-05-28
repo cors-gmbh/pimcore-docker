@@ -23,17 +23,8 @@ RUN set -eux; \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
       musl-locales icu-data-full lcms2-dev ghostscript libreoffice imagemagick imagemagick-dev; \
-    if [ "$PHP_VERSION" = "8.3" ] || [ "$PHP_VERSION" = "8.4" ]; then \
-      mkdir -p /usr/src/php/ext/imagick; \
-      curl -fsSL https://github.com/Imagick/imagick/archive/${IMAGICK_VERSION_FROM_SRC}.tar.gz | tar xvz -C "/usr/src/php/ext/imagick" --strip 1; \
-      if [ "$PHP_VERSION" = "8.4" ]; then \
-        sed -i 's/php_strtolower/zend_str_tolower/g' /usr/src/php/ext/imagick/imagick.c; \
-      fi; \
-      docker-php-ext-install imagick; \
-    else \
       pecl install imagick; \
       docker-php-ext-enable imagick; \
-    fi; \
     docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
     docker-php-ext-configure gd -enable-gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
