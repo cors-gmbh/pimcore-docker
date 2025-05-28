@@ -22,9 +22,6 @@ permissions:
   attestations: write
   id-token: write
 
-env:
-  IMAGICK_VERSION_FROM_SRC: 28f27044e435a2b203e32675e942eb8de620ee58
-
 jobs:
   build:
     name: >
@@ -100,7 +97,6 @@ jobs:
             $(if [ -n "${{ env.FROM_IMAGE }}" ]; then echo "--build-arg FROM=${{ env.FROM_IMAGE }}"; fi) \
             --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
             --build-arg ALPINE_VERSION=${{ matrix.alpine || '' }} \
-            --build-arg IMAGICK_VERSION_FROM_SRC=${{ env.IMAGICK_VERSION_FROM_SRC || '' }} \
             --build-arg NGINX_VERSION=${{ matrix.nginx_version || '' }} .
 
       - name: Push Docker Image

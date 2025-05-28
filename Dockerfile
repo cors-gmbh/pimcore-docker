@@ -7,7 +7,6 @@ FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} as cors_php
 ARG PHP_VERSION
 ARG PHP_TYPE
 ARG ALPINE_VERSION
-ARG IMAGICK_VERSION_FROM_SRC=""
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
