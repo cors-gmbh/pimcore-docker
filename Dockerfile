@@ -2,7 +2,7 @@ ARG PHP_VERSION="8.3"
 ARG PHP_TYPE="fpm"
 ARG ALPINE_VERSION=3.20
 
-FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} as cors_php
+FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} AS cors_php
 
 ARG PHP_VERSION
 ARG PHP_TYPE
@@ -10,7 +10,7 @@ ARG ALPINE_VERSION
 
 SHELL ["/bin/sh", "-eo", "pipefail", "-c"]
 
-ENV TIMEZONE Europe/Vienna
+ENV TIMEZONE=Europe/Vienna
 
 RUN set -eux; \
     apk update && apk upgrade && apk add --no-cache \
@@ -36,8 +36,8 @@ RUN set -eux; \
     apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev tar; \
     rm -rf /var/cache/apk/*;
 
-ENV COMPOSER_ALLOW_SUPERUSER 1
-ENV COMPOSER_MEMORY_LIMIT -1
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_MEMORY_LIMIT=-1
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 RUN mkdir -p /usr/local/var/log/php7/
@@ -66,12 +66,12 @@ RUN chmod +x /usr/local/bin/wait_pimcore
 RUN chmod +x /usr/local/bin/health
 RUN chmod +x /usr/local/bin/status
 
-FROM cors_php as cors_php_cli
+FROM cors_php AS cors_php_cli
 
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["/bin/sh", "-c"]
 
-FROM cors_php as cors_php_fpm
+FROM cors_php AS cors_php_fpm
 
 COPY fpm/php-config.conf /usr/local/etc/php-fpm.conf
 COPY fpm/php-pool-config.conf /usr/local/etc/php-fpm.d/www.conf
