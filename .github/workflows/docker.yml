@@ -27,10 +27,10 @@ jobs:
     outputs:
       php_matrix: ${{ steps.generate.outputs.php_matrix }}
       php_manifest: ${{ steps.generate.outputs.php_manifest }}
-      php-debug_matrix: ${{ steps.generate.outputs.php-debug_matrix }}
-      php-debug_manifest: ${{ steps.generate.outputs.php-debug_manifest }}
-      php-blackfire_matrix: ${{ steps.generate.outputs.php-blackfire_matrix }}
-      php-blackfire_manifest: ${{ steps.generate.outputs.php-blackfire_manifest }}
+      php_debug_matrix: ${{ steps.generate.outputs.php_debug_matrix }}
+      php_debug_manifest: ${{ steps.generate.outputs.php_debug_manifest }}
+      php_blackfire_matrix: ${{ steps.generate.outputs.php_blackfire_matrix }}
+      php_blackfire_manifest: ${{ steps.generate.outputs.php_blackfire_manifest }}
       supervisord_matrix: ${{ steps.generate.outputs.supervisord_matrix }}
       supervisord_manifest: ${{ steps.generate.outputs.supervisord_manifest }}
       nginx_matrix: ${{ steps.generate.outputs.nginx_matrix }}
@@ -91,11 +91,11 @@ jobs:
 
             local matrix='{"include":['
 
-            if [[ "$component" == "php" || "$component" == "php-debug" ]]; then
+            if [[ "$component" == "php" || "$component" == "php_debug" ]]; then
               for php_version in "${PHP[@]}"; do
                 for php_type in "${TYPES[@]}"; do
                   for alpine in "${ALPINE[@]}"; do
-                    if [[ "$component" == "php-debug" && "$php_type" != "fpm" ]]; then continue; fi
+                    if [[ "$component" == "php_debug" && "$php_type" != "fpm" ]]; then continue; fi
                     if [[ "$build_axes" == "build" ]]; then
                       for arch in "${ARCH[@]}"; do
                         if is_incompatible_combination php_version "$php_version" php_type "$php_type" alpine "$alpine" arch "$arch"; then continue; fi
@@ -109,7 +109,7 @@ jobs:
                 done
               done
 
-            elif [[ "$component" == "php-blackfire" || "$component" == "supervisord" ]]; then
+            elif [[ "$component" == "php_blackfire" || "$component" == "supervisord" ]]; then
               for php_version in "${PHP[@]}"; do
                 for alpine in "${ALPINE[@]}"; do
                   if [[ "$build_axes" == "build" ]]; then
@@ -150,7 +150,7 @@ jobs:
           ## Build for all components
           ########################
 
-          for component in php php-debug php-blackfire supervisord nginx; do
+          for component in php php_debug php_blackfire supervisord nginx; do
             generate_matrix "$component" "${component//-/_}_matrix" "build"
             generate_matrix "$component" "${component//-/_}_manifest" "manifest"
           done
@@ -160,15 +160,15 @@ jobs:
     uses: ./.github/workflows/docker-build.yml
     with:
       component: php
-      matrix: ${{ needs.prepare-matrix.outputs.php_matrix }}
-      matrix_manifest: ${{ needs.prepare-matrix.outputs.php_manifest }}
+      matrix: ${{ toJSON(needs.prepare-matrix.outputs.php_matrix) }}
+      matrix_manifest: ${{ toJSON(needs.prepare-matrix.outputs.php_manifest) }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_php_debug:
     needs: [ build_php, prepare-matrix ]
     uses: ./.github/workflows/docker-build.yml
     with:
-      component: php-debug
+      component: php_debug
       matrix: ${{ needs.prepare-matrix.outputs.php_debug_matrix }}
       matrix_manifest: ${{ needs.prepare-matrix.outputs.php_debug_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
@@ -177,7 +177,7 @@ jobs:
     needs: [ build_php, prepare-matrix ]
     uses: ./.github/workflows/docker-build.yml
     with:
-      component: php-blackfire
+      component: php_blackfire
       matrix: ${{ needs.prepare-matrix.outputs.php_blackfire_matrix }}
       matrix_manifest: ${{ needs.prepare-matrix.outputs.php_blackfire_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}

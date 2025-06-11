@@ -29,7 +29,7 @@ jobs:
       ${{ matrix.arch }}/${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
-      matrix: ${{ inputs.matrix }}
+      matrix: ${{ fromJSON(inputs.matrix) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -46,11 +46,11 @@ jobs:
           if [ "${{ inputs.component }}" == "php" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php-debug" ]; then
+          elif [ "${{ inputs.component }}" == "php_debug" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}-debug
             FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-${{ matrix.php_type }}:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
+          elif [ "${{ inputs.component }}" == "php_blackfire" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-fpm-blackfire
             FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
@@ -77,9 +77,9 @@ jobs:
         run: |
           DOCKERFILE=Dockerfile
 
-          if [ "${{ inputs.component }}" == "php-debug" ]; then
+          if [ "${{ inputs.component }}" == "php_debug" ]; then
             DOCKERFILE=Dockerfile-debug
-          elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
+          elif [ "${{ inputs.component }}" == "php_blackfire" ]; then
             DOCKERFILE=Dockerfile-blackfire
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
             DOCKERFILE=Dockerfile-supervisord
@@ -127,7 +127,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04
     strategy:
-      matrix: ${{ inputs.matrix_manifest }}
+      matrix: ${{ fromJSON(inputs.matrix_manifest) }}
     steps:
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -141,10 +141,10 @@ jobs:
           if [ "${{ inputs.component }}" == "php" ]; then
             IMAGE_NAME=php-${{ matrix.php_type }}
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php-debug" ]; then
+          elif [ "${{ inputs.component }}" == "php_debug" ]; then
             IMAGE_NAME=php-${{ matrix.php_type }}-debug
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php-blackfire" ]; then
+          elif [ "${{ inputs.component }}" == "php_blackfire" ]; then
             IMAGE_NAME=php-fpm-blackfire
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" == "supervisord" ]; then
