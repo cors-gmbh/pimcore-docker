@@ -40,28 +40,35 @@ jobs:
         id: generate-matrix
         run: |
           set -e
-          
+
           ########################
           ## Parse env variables into arrays
           ########################
-          
+
           IFS=' ' read -r -a ARCH <<< "$ARCHITECTURES"
           IFS=' ' read -r -a PHP <<< "$PHP_VERSIONS"
           IFS=' ' read -r -a TYPES <<< "$PHP_TYPES"
           IFS=' ' read -r -a ALPINE <<< "$ALPINE_VERSIONS"
           IFS=' ' read -r -a NGINX <<< "$NGINX_VERSIONS"
-          
+
           ########################
           ## Incompatibility Check Function
           ########################
-          
+
           is_incompatible_combination() {
-            declare -A combination=("${@}")
+            declare -A combination
+            while [[ "$#" -gt 1 ]]; do
+              key="$1"
+              value="$2"
+              combination["$key"]="$value"
+              shift 2
+            done
+
             for row in $(echo "$INCOMPATIBLE_MATRIX" | jq -c '.[]'); do
               local skip=false
               for key in $(echo "$row" | jq -r 'keys[]'); do
-                value=$(echo "$row" | jq -r --arg key "$key" '.[$key]')
-                if [[ "${combination[$key]}" != "$value" ]]; then
+                expected_value=$(echo "$row" | jq -r --arg key "$key" '.[$key]')
+                if [[ "${combination[$key]}" != "$expected_value" ]]; then
                   skip=true
                   break
                 fi
@@ -72,19 +79,18 @@ jobs:
             done
             return 1
           }
-          
+
           ########################
           ## Matrix Generator Function
           ########################
-          
+
           generate_matrix() {
             local component="$1"
             local output_var="$2"
             local build_axes="$3"
-          
+
             local matrix='{"include":['
-          
-            # Dynamisch je nach Komponente kombinieren
+
             if [[ "$component" == "php" || "$component" == "php-debug" ]]; then
               for php_version in "${PHP[@]}"; do
                 for php_type in "${TYPES[@]}"; do
@@ -92,85 +98,58 @@ jobs:
                     if [[ "$component" == "php-debug" && "$php_type" != "fpm" ]]; then continue; fi
                     if [[ "$build_axes" == "build" ]]; then
                       for arch in "${ARCH[@]}"; do
-                        declare -A combination=(
-                          ["arch"]="$arch"
-                          ["php_version"]="$php_version"
-                          ["php_type"]="$php_type"
-                          ["alpine"]="$alpine"
-                        )
-                        if is_incompatible_combination "${combination[@]}"; then continue; fi
+                        if is_incompatible_combination php_version "$php_version" php_type "$php_type" alpine "$alpine" arch "$arch"; then continue; fi
                         matrix+="{\"arch\":\"$arch\",\"php_version\":\"$php_version\",\"php_type\":\"$php_type\",\"alpine\":\"$alpine\"},"
                       done
                     else
-                      declare -A combination=(
-                        ["php_version"]="$php_version"
-                        ["php_type"]="$php_type"
-                        ["alpine"]="$alpine"
-                      )
-                      if is_incompatible_combination "${combination[@]}"; then continue; fi
+                      if is_incompatible_combination php_version "$php_version" php_type "$php_type" alpine "$alpine"; then continue; fi
                       matrix+="{\"php_version\":\"$php_version\",\"php_type\":\"$php_type\",\"alpine\":\"$alpine\"},"
                     fi
                   done
                 done
               done
-          
+
             elif [[ "$component" == "php-blackfire" || "$component" == "supervisord" ]]; then
               for php_version in "${PHP[@]}"; do
                 for alpine in "${ALPINE[@]}"; do
                   if [[ "$build_axes" == "build" ]]; then
                     for arch in "${ARCH[@]}"; do
-                      declare -A combination=(
-                        ["arch"]="$arch"
-                        ["php_version"]="$php_version"
-                        ["alpine"]="$alpine"
-                      )
-                      if is_incompatible_combination "${combination[@]}"; then continue; fi
+                      if is_incompatible_combination php_version "$php_version" alpine "$alpine" arch "$arch"; then continue; fi
                       matrix+="{\"arch\":\"$arch\",\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
                     done
                   else
-                    declare -A combination=(
-                      ["php_version"]="$php_version"
-                      ["alpine"]="$alpine"
-                    )
-                    if is_incompatible_combination "${combination[@]}"; then continue; fi
+                    if is_incompatible_combination php_version "$php_version" alpine "$alpine"; then continue; fi
                     matrix+="{\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
                   fi
                 done
               done
-          
+
             elif [[ "$component" == "nginx" ]]; then
               for nginx_version in "${NGINX[@]}"; do
                 if [[ "$build_axes" == "build" ]]; then
                   for arch in "${ARCH[@]}"; do
-                    declare -A combination=(
-                      ["arch"]="$arch"
-                      ["nginx_version"]="$nginx_version"
-                    )
-                    if is_incompatible_combination "${combination[@]}"; then continue; fi
+                    if is_incompatible_combination nginx_version "$nginx_version" arch "$arch"; then continue; fi
                     matrix+="{\"arch\":\"$arch\",\"nginx_version\":\"$nginx_version\"},"
                   done
                 else
-                  declare -A combination=(
-                    ["nginx_version"]="$nginx_version"
-                  )
-                  if is_incompatible_combination "${combination[@]}"; then continue; fi
+                  if is_incompatible_combination nginx_version "$nginx_version"; then continue; fi
                   matrix+="{\"nginx_version\":\"$nginx_version\"},"
                 fi
               done
             fi
-          
-            matrix="${matrix%,}]}" # trailing comma entfernen
+
+            matrix="${matrix%,}]}"
             echo "$output_var=$matrix" >> $GITHUB_OUTPUT
-          
+
             echo "::group::Generated matrix for $component ($output_var)"
             echo "$matrix" | jq .
             echo "::endgroup::"
           }
-          
+
           ########################
           ## Build for all components
           ########################
-          
+
           for component in php php-debug php-blackfire supervisord nginx; do
             generate_matrix "$component" "${component//-/_}_matrix" "build"
             generate_matrix "$component" "${component//-/_}_manifest" "manifest"
