@@ -10,113 +10,189 @@ on:
   schedule:
     - cron: "0 2 * * *"
 
+env:
+  ARCHITECTURES: 'amd arm'
+  PHP_VERSIONS: '8.1 8.2 8.3 8.4'
+  PHP_TYPES: 'fpm cli'
+  ALPINE_VERSIONS: '3.20 3.21 3.22'
+  NGINX_VERSIONS: '1.25 1.26 1.27 1.28'
+  INCOMPATIBLE_MATRIX: >
+    [
+      { "php_version": "8.1", "alpine": "3.22" }
+    ]
+
 jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [ php, php-debug, php-blackfire, supervisord, nginx ]
+    outputs:
+      php_matrix: ${{ steps.generate.outputs.php_matrix }}
+      php_manifest: ${{ steps.generate.outputs.php_manifest }}
+      php-debug_matrix: ${{ steps.generate.outputs.php-debug_matrix }}
+      php-debug_manifest: ${{ steps.generate.outputs.php-debug_manifest }}
+      php-blackfire_matrix: ${{ steps.generate.outputs.php-blackfire_matrix }}
+      php-blackfire_manifest: ${{ steps.generate.outputs.php-blackfire_manifest }}
+      supervisord_matrix: ${{ steps.generate.outputs.supervisord_matrix }}
+      supervisord_manifest: ${{ steps.generate.outputs.supervisord_manifest }}
+      nginx_matrix: ${{ steps.generate.outputs.nginx_matrix }}
+      nginx_manifest: ${{ steps.generate.outputs.nginx_manifest }}
+    steps:
+      - name: Generate all matrices
+        id: generate-matrix
+        run: |
+          set -e
+
+          # Parse env variables into arrays
+          IFS=' ' read -r -a ARCH <<< "$ARCHITECTURES"
+          IFS=' ' read -r -a PHP <<< "$PHP_VERSIONS"
+          IFS=' ' read -r -a TYPES <<< "$PHP_TYPES"
+          IFS=' ' read -r -a ALPINE <<< "$ALPINE_VERSIONS"
+          IFS=' ' read -r -a NGINX <<< "$NGINX_VERSIONS"
+
+          # Generic incompatibility check function
+          is_incompatible_combination() {
+            declare -A combination=("${@}")
+            for row in $(echo "$INCOMPATIBLE_MATRIX" | jq -c '.[]'); do
+              local skip=false
+              for key in $(echo "$row" | jq -r 'keys[]'); do
+                value=$(echo "$row" | jq -r --arg key "$key" '.[$key]')
+                if [[ "${combination[$key]}" != "$value" ]]; then
+                  skip=true
+                  break
+                fi
+              done
+              if [[ "$skip" == "false" ]]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          # Component axes definitions
+          declare -A COMPONENT_AXES_BUILD=(
+            ["php"]="arch php_version php_type alpine"
+            ["php-debug"]="arch php_version php_type alpine"
+            ["php-blackfire"]="arch php_version alpine"
+            ["supervisord"]="arch php_version alpine"
+            ["nginx"]="arch nginx_version"
+          )
+
+          declare -A COMPONENT_AXES_MANIFEST=(
+            ["php"]="php_version php_type alpine"
+            ["php-debug"]="php_version php_type alpine"
+            ["php-blackfire"]="php_version alpine"
+            ["supervisord"]="php_version alpine"
+            ["nginx"]="nginx_version"
+          )
+
+          # Combination builder (recursive)
+          build_combinations() {
+            local keys=("$@")
+            local current_key="${keys[0]}"
+            local remaining_keys=("${keys[@]:1}")
+
+            local values
+            case "$current_key" in
+              arch) values=("${ARCH[@]}") ;;
+              php_version) values=("${PHP[@]}") ;;
+              php_type) values=("${TYPES[@]}") ;;
+              alpine) values=("${ALPINE[@]}") ;;
+              nginx_version) values=("${NGINX[@]}") ;;
+            esac
+
+            for value in "${values[@]}"; do
+              if [ ${#remaining_keys[@]} -eq 0 ]; then
+                echo "([$current_key]=\"$value\")"
+              else
+                build_combinations "${remaining_keys[@]}" | while read -r rest; do
+                  echo "([$current_key]=\"$value\" ${rest:1:${#rest}-2})"
+                done
+              fi
+            done
+          }
+
+          # Matrix generator function
+          generate_matrix() {
+            local component="$1"
+            local output_var="$2"
+            local is_manifest="$3"
+
+            local axes_var="COMPONENT_AXES_BUILD"
+            [[ "$is_manifest" == "true" ]] && axes_var="COMPONENT_AXES_MANIFEST"
+
+            local axes=(${!axes_var}["$component"])
+            local matrix='{"include":['
+
+            build_combinations "${axes[@]}" | while read -r combination_json; do
+              declare -A combination
+              eval "combination=($combination_json)"
+
+              if is_incompatible_combination "${combination[@]}"; then
+                continue
+              fi
+
+              # Build JSON entry
+              local entry="{"
+              for key in "${!combination[@]}"; do
+                entry+="\"$key\":\"${combination[$key]}\","
+              done
+              entry="${entry%,}}"
+              matrix+="$entry,"
+            done
+
+            matrix="${matrix%,}]}"
+            echo "$output_var=$matrix" >> $GITHUB_OUTPUT
+          }
+
+          # Generate all component matrices and manifests
+          for component in php php-debug php-blackfire supervisord nginx; do
+            generate_matrix "$component" "${component//-/_}_matrix" "false"
+            generate_matrix "$component" "${component//-/_}_manifest" "true"
+          done
+
   build_php:
+    needs: prepare-matrix
     uses: ./.github/workflows/docker-build.yml
     with:
       component: php
-      matrix: |
-        {
-          "arch": ["amd", "arm"],
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "php_type": ["fpm", "cli"],
-          "alpine": ["3.20", "3.21", "3.22"],
-        }
-      matrix_manifest: |
-        {
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "php_type": ["fpm", "cli"],
-          "alpine": ["3.20", "3.21", "3.22"]
-        }
-      matrix_exclude: | 
-        {
-          "php_version": ["8.1"],
-          "alpine": ["3.22"]
-        }
+      matrix: ${{ needs.prepare-matrix.outputs.php_matrix }}
+      matrix_manifest: ${{ needs.prepare-matrix.outputs.php_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_php_debug:
+    needs: [ build_php, prepare-matrix ]
     uses: ./.github/workflows/docker-build.yml
-    needs: build_php
     with:
       component: php-debug
-      matrix: |
-        {
-          "arch": ["amd", "arm"],
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "php_type": ["fpm"],
-          "alpine": ["3.20", "3.21", "3.22"]
-        }
-      matrix_manifest: |
-        {
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "php_type": ["fpm"],
-          "alpine": ["3.20", "3.21", "3.22"]
-        }
-      matrix_exclude: |
-        {
-          "php_version": ["8.1"],
-          "alpine": ["3.22"]
-        }
+      matrix: ${{ needs.prepare-matrix.outputs.php_debug_matrix }}
+      matrix_manifest: ${{ needs.prepare-matrix.outputs.php_debug_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_php_blackfire:
+    needs: [ build_php, prepare-matrix ]
     uses: ./.github/workflows/docker-build.yml
-    needs: build_php
     with:
       component: php-blackfire
-      matrix: |
-        {
-          "arch": ["amd", "arm"],
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "alpine": ["3.20", "3.21", "3.22"]
-        }
-      matrix_manifest: |
-        {
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "alpine": ["3.20", "3.21", "3.22"]
-        }
-      matrix_exclude: |
-        {
-          "php_version": ["8.1"],
-          "alpine": ["3.22"]
-        }
+      matrix: ${{ needs.prepare-matrix.outputs.php_blackfire_matrix }}
+      matrix_manifest: ${{ needs.prepare-matrix.outputs.php_blackfire_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_supervisord:
+    needs: [ build_php, prepare-matrix ]
     uses: ./.github/workflows/docker-build.yml
-    needs: build_php
     with:
       component: supervisord
-      matrix: |
-        {
-          "arch": ["amd", "arm"],
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "alpine": ["3.20", "3.21", "3.22"]
-        }
-      matrix_manifest: |
-        {
-          "php_version": ["8.1", "8.2", "8.3", "8.4"],
-          "alpine": ["3.20", "3.21", "3.22"]
-        }
-      matrix_exclude: |
-        {
-          "php_version": ["8.1"],
-          "alpine": ["3.22"]
-        }
+      matrix: ${{ needs.prepare-matrix.outputs.supervisord_matrix }}
+      matrix_manifest: ${{ needs.prepare-matrix.outputs.supervisord_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_nginx:
+    needs: prepare-matrix
     uses: ./.github/workflows/docker-build.yml
     with:
       component: nginx
-      matrix: |
-        {
-          "arch": ["amd", "arm"],
-          "nginx_version": ["1.25", "1.26", "1.27", "1.28"],
-        }
-      matrix_manifest: |
-        {
-          "nginx_version": ["1.25", "1.26", "1.27", "1.28"],
-        }
+      matrix: ${{ needs.prepare-matrix.outputs.nginx_matrix }}
+      matrix_manifest: ${{ needs.prepare-matrix.outputs.nginx_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}

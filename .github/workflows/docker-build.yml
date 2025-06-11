@@ -15,9 +15,6 @@ on:
       release_tag:
         required: false
         type: string # Optional input for specifying a release tag.
-      matrix_exclude:
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -33,7 +30,6 @@ jobs:
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJson(inputs.matrix) }}
-      exclude: ${{ fromJson(inputs.matrix_exclude || '[]') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -132,7 +128,6 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix: ${{ fromJson(inputs.matrix_manifest) }}
-      exclude: ${{ fromJson(inputs.matrix_exclude || '[]') }}
     steps:
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
