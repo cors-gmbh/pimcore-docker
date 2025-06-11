@@ -144,6 +144,10 @@ jobs:
 
             matrix="${matrix%,}]}"
             echo "$output_var=$matrix" >> $GITHUB_OUTPUT
+  
+            echo "::group::Generated matrix for $component ($output_var)"
+            echo "$matrix"
+            echo "::endgroup::"
           }
 
           # Generate all component matrices and manifests
