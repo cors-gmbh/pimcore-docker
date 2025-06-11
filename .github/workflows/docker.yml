@@ -20,7 +20,7 @@ jobs:
           "arch": ["amd", "arm"],
           "php_version": ["8.1", "8.2", "8.3", "8.4"],
           "php_type": ["fpm", "cli"],
-          "alpine": ["3.20", "3.21", "3.22"]
+          "alpine": ["3.20", "3.21", "3.22"],
           "exclude": {
             "php_version": ["8.1"],
             "alpine": ["3.22"]
