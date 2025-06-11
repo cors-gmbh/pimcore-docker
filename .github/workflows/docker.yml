@@ -18,7 +18,8 @@ env:
   NGINX_VERSIONS: '1.25 1.26 1.27 1.28'
   INCOMPATIBLE_MATRIX: >
     [
-      { "php_version": "8.1", "alpine": "3.22" }
+      { "php_version": "8.1", "alpine": "3.22" },
+      { "php_version": "8.2", "alpine": "3.22" },
     ]
 
 jobs:
