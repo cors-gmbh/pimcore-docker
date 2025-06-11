@@ -19,7 +19,7 @@ env:
   INCOMPATIBLE_MATRIX: >
     [
       { "php_version": "8.1", "alpine": "3.22" },
-      { "php_version": "8.2", "alpine": "3.22" },
+      { "php_version": "8.2", "alpine": "3.22" }
     ]
 
 jobs:
