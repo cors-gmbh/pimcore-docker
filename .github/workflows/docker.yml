@@ -24,9 +24,6 @@ env:
 jobs:
   prepare-matrix:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        component: [ php, php-debug, php-blackfire, supervisord, nginx ]
     outputs:
       php_matrix: ${{ steps.generate.outputs.php_matrix }}
       php_manifest: ${{ steps.generate.outputs.php_manifest }}
