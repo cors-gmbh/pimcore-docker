@@ -1,8 +1,10 @@
 #!/bin/sh
 set -e
 
-export SCRIPT_NAME=/fpm-status
-export SCRIPT_FILENAME=/fpm-status
-export REQUEST_METHOD=GET
-
-cgi-fcgi -bind -connect 127.0.0.1:9001
+# run the healthcheck with minimal env variables
+env -i \
+  SCRIPT_NAME=/fpm-status \
+  SCRIPT_FILENAME=/fpm-status \
+  REQUEST_METHOD=GET \
+  CONTENT_LENGTH=0 \
+  cgi-fcgi -bind -connect 127.0.0.1:9001
