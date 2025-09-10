@@ -2,7 +2,7 @@
 set -e
 
 echo "Install Pimcore"
-vendor/bin/pimcore-install --skip-database-config --ignore-existing-config --no-interaction
+vendor/bin/pimcore-install --skip-database-config --no-interaction
 
 rm -rf var/config/system.yml
 rm -rf var/cache
