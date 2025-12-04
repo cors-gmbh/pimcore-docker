@@ -36,10 +36,10 @@ Cheers Dominik :)
 
 We currently build the images for following Versions:
 
- - ***Alpine***: 3.20, 3.21, 3.22
+ - ***Alpine***: 3.21, 3.22, 3.23
  - ***PHP***: 8.2, 8.3, 8.4
  - ***Variants***: CLI, FPM, FPM-Debug, Supervisord, FPM-Blackfire
- - ***Nginx***: 1.25, 1.26, 1.27, 1.28
+ - ***Nginx***: 1.26, 1.27, 1.28, 1.29
 
 ## Available Images
 
@@ -51,11 +51,11 @@ We currently build the images for following Versions:
 
 Images are named like:
 
-- ***FPM***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.2-alpine3.21-7.0-LATEST
-- ***FPM-Debug***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.2-alpine3.21-7.0-LATEST
-- ***Supervisord***: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.2-alpine3.21-7.0-LATEST
-- ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.2-alpine3.21-7.0-LATEST
-- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.26-7.0-LATEST
+- ***FPM***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.4-alpine3.23-8.0-LATEST
+- ***FPM-Debug***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.4-alpine3.23-8.0-LATEST
+- ***Supervisord***: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.4-alpine3.23-8.0-LATEST
+- ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.4-alpine3.23-8.0-LATEST
+- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.29-8.0-LATEST
 
 ## Getting Started
 
@@ -94,7 +94,7 @@ services:
       - php-debug
 
   php:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.2-alpine3.21-7.0-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.3-alpine3.23-8.0-LATEST
     command: 'php-fpm'
     entrypoint: docker-php-entrypoint
     depends_on:
@@ -103,7 +103,7 @@ services:
       - ./:/var/www/html:cached
 
   php-debug:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.2-alpine3.21-7.0-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.3-alpine3.23-8.0-LATEST
     command: 'php-fpm'
     entrypoint: xdebug-entrypoint
     depends_on:
@@ -117,7 +117,7 @@ services:
       - PHP_IDE_CONFIG=serverName=localhost
 
   supervisord:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.2-alpine3.21-7.0-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.3-alpine3.23-8.0-LATEST
     depends_on:
       - db
     volumes:
