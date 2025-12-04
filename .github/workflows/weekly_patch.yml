@@ -3,40 +3,72 @@ name: Weekly Patch Release
 on:
   schedule:
     - cron: "0 3 * * 1"
-  workflow_dispatch: ~
+  workflow_dispatch:
+    inputs:
+      branches:
+        description: 'Branches to release (comma-separated, e.g. "7.0,8.0"). Leave empty for all active branches.'
+        required: false
+        default: ''
 
 jobs:
-  create_patch_release:
+  get-branches:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine branches
+        id: set-matrix
+        run: |
+          if [ -n "${{ github.event.inputs.branches }}" ]; then
+            branches="${{ github.event.inputs.branches }}"
+            json_array=$(echo "$branches" | tr ',' '\n' | jq -R . | jq -s -c .)
+          else
+            git fetch --all
+            json_array=$(git branch -r | grep -E 'origin/[0-9]+\.0$' | sed 's|origin/||' | tr -d ' ' | jq -R . | jq -s -c .)
+          fi
+          echo "matrix={\"branch\":$json_array}" >> $GITHUB_OUTPUT
+
+  create_patch_release:
+    needs: get-branches
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.get-branches.outputs.matrix) }}
+      fail-fast: false
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 0
 
       - name: Fetch Tags
         run: git fetch --tags
 
-      - name: Get Latest Tag
+      - name: Get Latest Tag for Branch
         id: get_latest_tag
         run: |
-          latest_tag=$(git tag --sort=-v:refname | head -n 1)
-          echo "Latest tag: $latest_tag"
+          major_version=$(echo "${{ matrix.branch }}" | cut -d'.' -f1)
+          latest_tag=$(git tag --sort=-v:refname | grep -E "^${major_version}\.[0-9]+\.[0-9]+$" | head -n 1)
+          if [ -z "$latest_tag" ]; then
+            latest_tag="${major_version}.0.0"
+          fi
           echo "latest_tag=$latest_tag" >> $GITHUB_ENV
 
       - name: Calculate Next Patch Version
         id: calculate_next_patch
         run: |
           latest_tag=${{ env.latest_tag }}
-
-          # Extrahiere die Major-, Minor- und Patch-Versionen
           major=$(echo $latest_tag | cut -d '.' -f1)
           minor=$(echo $latest_tag | cut -d '.' -f2)
           patch=$(echo $latest_tag | cut -d '.' -f3)
-
           next_patch=$((patch + 1))
           new_tag="${major}.${minor}.${next_patch}"
-
-          echo "Next patch version: $new_tag"
           echo "new_tag=$new_tag" >> $GITHUB_ENV
 
       - name: Configure Git
@@ -47,17 +79,22 @@ jobs:
       - name: Create New Tag
         run: |
           if git rev-parse ${{ env.new_tag }} >/dev/null 2>&1; then
-            echo "Tag already exists. Skipping."
+            echo "Tag ${{ env.new_tag }} already exists. Skipping."
           else
             git tag ${{ env.new_tag }}
             git push origin refs/tags/${{ env.new_tag }}
+            echo "Created and pushed tag ${{ env.new_tag }}"
           fi
 
       - name: Create GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ env.new_tag }} \
-            --title "Release ${{ env.new_tag }}" \
-            --notes "Automated weekly patch release."
-          gh workflow run docker.yml --ref ${{ env.new_tag }}
+          if gh release view ${{ env.new_tag }} >/dev/null 2>&1; then
+            echo "Release ${{ env.new_tag }} already exists. Skipping."
+          else
+            gh release create ${{ env.new_tag }} \
+              --title "Release ${{ env.new_tag }}" \
+              --notes "Automated weekly patch release for branch ${{ matrix.branch }}."
+            gh workflow run docker.yml --ref ${{ env.new_tag }}
+          fi

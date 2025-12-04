@@ -3,7 +3,8 @@ name: CORS Pimcore Docker Build
 on:
   push:
     branches:
-      - "7.0" 
+      - "7.0"
+      - "8.0"
     tags:
       - "*"
   workflow_dispatch: ~
@@ -12,14 +13,14 @@ on:
 
 env:
   ARCHITECTURES: 'amd arm'
-  PHP_VERSIONS: '8.1 8.2 8.3 8.4'
+  PHP_VERSIONS: '8.2 8.3 8.4'
   PHP_TYPES: 'fpm cli'
-  ALPINE_VERSIONS: '3.20 3.21 3.22'
-  NGINX_VERSIONS: '1.25 1.26 1.27 1.28'
+  ALPINE_VERSIONS: '3.21 3.22 3.23'
+  NGINX_VERSIONS: '1.26 1.27 1.28 1.29'
   INCOMPATIBLE_MATRIX: >
     [
-      { "php_version": "8.1", "alpine": "3.22" },
-      { "php_version": "8.2", "alpine": "3.22" }
+      { "php_version": "8.2", "alpine": "3.22" },
+      { "php_version": "8.2", "alpine": "3.23" },
     ]
 
 jobs:
