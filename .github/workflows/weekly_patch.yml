@@ -29,7 +29,7 @@ jobs:
             json_array=$(echo "$branches" | tr ',' '\n' | jq -R . | jq -s -c .)
           else
             git fetch --all
-            json_array=$(git branch -r | grep -E 'origin/[0-9]+\.0$' | sed 's|origin/||' | tr -d ' ' | jq -R . | jq -s -c .)
+            json_array=$(git branch -r | grep -E 'origin/[0-9]+\.0$' | sed 's|origin/||' | tr -d ' ' | awk -F. '$1 >= 7' | jq -R . | jq -s -c .)
           fi
           echo "matrix={\"branch\":$json_array}" >> $GITHUB_OUTPUT
 
