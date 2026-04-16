@@ -37,7 +37,7 @@ Cheers Dominik :)
 We currently build the images for following Versions:
 
  - ***Alpine***: 3.21, 3.22, 3.23
- - ***PHP***: 8.2, 8.3, 8.4
+ - ***PHP***: 8.2, 8.3, 8.4, 8.5
  - ***Variants***: CLI, FPM, FPM-Debug, Supervisord, FPM-Blackfire
  - ***Nginx***: 1.26, 1.27, 1.28, 1.29
 

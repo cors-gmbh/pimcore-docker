@@ -21,16 +21,28 @@ RUN set -eux; \
       xvfb ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       libwmf-dev libxext-dev libxt-dev librsvg-dev libzip-dev fcgi \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
-      musl-locales icu-data-full lcms2-dev ghostscript libreoffice imagemagick imagemagick-dev; \
+      musl-locales icu-data-full lcms2-dev ghostscript libreoffice imagemagick imagemagick-dev git \
+      rabbitmq-c-dev; \
+    if [ "$(php -r 'echo PHP_MAJOR_VERSION;')" -ge 8 ] && [ "$(php -r 'echo PHP_MINOR_VERSION;')" -ge 5 ]; then \
+      cd /tmp && git clone https://github.com/Imagick/imagick.git && cd imagick && \
+      phpize && ./configure && make && \
+      cp modules/imagick.so "$(php -r 'echo ini_get("extension_dir");')/imagick.so" && \
+      cd / && rm -rf /tmp/imagick; \
+    else \
       pecl install imagick; \
-      docker-php-ext-enable imagick; \
-    docker-php-ext-install intl mbstring mysqli bcmath bz2 soap xsl pdo pdo_mysql fileinfo exif zip opcache; \
+    fi; \
+    docker-php-ext-enable imagick; \
+    PHP_EXT="intl mysqli bcmath bz2 soap xsl pdo pdo_mysql exif zip"; \
+    php -r 'exit(extension_loaded("mbstring") ? 0 : 1);' || PHP_EXT="$PHP_EXT mbstring"; \
+    php -r 'exit(extension_loaded("fileinfo") ? 0 : 1);' || PHP_EXT="$PHP_EXT fileinfo"; \
+    php -r 'exit(extension_loaded("Zend OPcache") ? 0 : 1);' || PHP_EXT="$PHP_EXT opcache"; \
+    docker-php-ext-install $PHP_EXT; \
     docker-php-ext-configure gd -enable-gd --with-freetype --with-jpeg --with-webp; \
     docker-php-ext-install gd; \
     docker-php-ext-configure pcntl --enable-pcntl; \
     docker-php-ext-install pcntl; \
-    pecl install apcu redis; \
-    docker-php-ext-enable redis apcu; \
+    pecl install apcu redis amqp; \
+    docker-php-ext-enable redis apcu amqp; \
     cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime; \
     echo "${TIMEZONE}" > /etc/timezone; \
     apk del tzdata autoconf gcc make g++ automake nasm cmake clang clang-dev openblas-dev tar; \
