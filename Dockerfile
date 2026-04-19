@@ -32,7 +32,7 @@ RUN set -eux; \
       pecl install imagick; \
     fi; \
     docker-php-ext-enable imagick; \
-    PHP_EXT="intl mysqli bcmath bz2 soap xsl pdo pdo_mysql exif zip"; \
+    PHP_EXT="intl mysqli bcmath bz2 soap xsl pdo pdo_mysql exif zip sockets"; \
     php -r 'exit(extension_loaded("mbstring") ? 0 : 1);' || PHP_EXT="$PHP_EXT mbstring"; \
     php -r 'exit(extension_loaded("fileinfo") ? 0 : 1);' || PHP_EXT="$PHP_EXT fileinfo"; \
     php -r 'exit(extension_loaded("Zend OPcache") ? 0 : 1);' || PHP_EXT="$PHP_EXT opcache"; \
