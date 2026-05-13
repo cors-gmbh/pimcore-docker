@@ -14,7 +14,7 @@ on:
         type: string
       release_tag:
         required: false
-        type: string # Optional input for specifying a release tag.
+        type: string
 
 permissions:
   contents: read
@@ -31,109 +31,80 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(inputs.matrix) }}
       max-parallel: 4
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set Image Name and Tag
-        id: image_name
-        run: |
-          FROM_IMAGE=""
-          RELEASE_TAG="${{ inputs.release_tag || env.GITHUB_REF_NAME }}"
-          
-          if [ "${{ inputs.component }}" == "php" ]; then
-            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php_debug" ]; then
-            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}-debug
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-${{ matrix.php_type }}:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php_blackfire" ]; then
-            IMAGE_NAME=${{ matrix.arch }}-php-fpm-blackfire
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "supervisord" ]; then
-            IMAGE_NAME=${{ matrix.arch }}-php-supervisord
-            FROM_IMAGE=ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-cli:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "nginx" ]; then
-            IMAGE_NAME=${{ matrix.arch }}-nginx
-            IMAGE_TAG=${{ matrix.nginx_version }}-${RELEASE_TAG}
-          fi
-          
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
-          echo "FROM_IMAGE=$FROM_IMAGE" >> $GITHUB_ENV
-          echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
-
-      - name: Pull Latest Image for Cache
+      - name: Set image metadata
+        id: image
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
-          docker pull $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} || echo "No cache available"
-
-      - name: Build Docker Image
-        id: build
-        run: |
+          RELEASE_TAG="${{ inputs.release_tag || env.GITHUB_REF_NAME }}"
           DOCKERFILE=Dockerfile
+          FROM_IMAGE=""
 
-          if [ "${{ inputs.component }}" == "php_debug" ]; then
+          if [ "${{ inputs.component }}" = "php" ]; then
+            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
+          elif [ "${{ inputs.component }}" = "php_debug" ]; then
+            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}-debug
+            FROM_IMAGE=$REGISTRY/${{ matrix.arch }}-php-${{ matrix.php_type }}:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
             DOCKERFILE=Dockerfile-debug
-          elif [ "${{ inputs.component }}" == "php_blackfire" ]; then
+          elif [ "${{ inputs.component }}" = "php_blackfire" ]; then
+            IMAGE_NAME=${{ matrix.arch }}-php-fpm-blackfire
+            FROM_IMAGE=$REGISTRY/${{ matrix.arch }}-php-fpm:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
             DOCKERFILE=Dockerfile-blackfire
-          elif [ "${{ inputs.component }}" == "supervisord" ]; then
+          elif [ "${{ inputs.component }}" = "supervisord" ]; then
+            IMAGE_NAME=${{ matrix.arch }}-php-supervisord
+            FROM_IMAGE=$REGISTRY/${{ matrix.arch }}-php-cli:${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
+            IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
             DOCKERFILE=Dockerfile-supervisord
-          elif [ "${{ inputs.component }}" == "nginx" ]; then
+          elif [ "${{ inputs.component }}" = "nginx" ]; then
+            IMAGE_NAME=${{ matrix.arch }}-nginx
+            IMAGE_TAG=${{ matrix.nginx_version }}-${RELEASE_TAG}
             DOCKERFILE=Dockerfile-nginx
           fi
 
-          REGISTRY=ghcr.io/${{ github.repository }}
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "image_ref=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "dockerfile=$DOCKERFILE" >> "$GITHUB_OUTPUT"
+          echo "from_image=$FROM_IMAGE" >> "$GITHUB_OUTPUT"
 
-          docker build \
-            -f $DOCKERFILE \
-            --cache-from $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
-            --tag $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
-            --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
-            $(if [ -n "${{ env.FROM_IMAGE }}" ]; then echo "--build-arg FROM=${{ env.FROM_IMAGE }}"; fi) \
-            --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
-            --build-arg ALPINE_VERSION=${{ matrix.alpine || '' }} \
-            --build-arg NGINX_VERSION=${{ matrix.nginx_version || '' }} .
-
-      - name: Push Docker Image
-        id: push
-        run: |
-          IMAGE_REF=ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
-          
-          for attempt in 1 2 3 4 5; do
-            if docker push "$IMAGE_REF"; then
-              exit 0
-            fi
-          
-            sleep_seconds=$((attempt * 15))
-            echo "Docker push failed, retrying in ${sleep_seconds}s (attempt ${attempt}/5)"
-            sleep "$sleep_seconds"
-          done
-          
-          docker push "$IMAGE_REF"
-
-      - name: Get Image Digest
-        id: get_digest
-        run: |
-          REGISTRY=ghcr.io/${{ github.repository }}
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} | cut -d '@' -f 2)
-          echo "IMAGE_DIGEST=$DIGEST" >> $GITHUB_ENV
-          echo "IMAGE_DIGEST=$DIGEST" # Output to logs for debugging
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ steps.image.outputs.dockerfile }}
+          push: true
+          tags: ${{ steps.image.outputs.image_ref }}
+          cache-from: type=registry,ref=${{ steps.image.outputs.image_ref }}
+          build-args: |
+            PHP_VERSION=${{ matrix.php_version || '' }}
+            PHP_TYPE=${{ matrix.php_type || '' }}
+            ALPINE_VERSION=${{ matrix.alpine || '' }}
+            NGINX_VERSION=${{ matrix.nginx_version || '' }}
+            FROM=${{ steps.image.outputs.from_image }}
 
       - name: Generate Artifact Attestation
         uses: actions/attest-build-provenance@v2
         with:
-          subject-name: ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ env.IMAGE_DIGEST }}
+          subject-name: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
   manifest:
-    name:
+    name: >
       Manifest
       ${{ inputs.component }}
       ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
@@ -142,48 +113,55 @@ jobs:
     strategy:
       matrix: ${{ fromJSON(inputs.matrix_manifest) }}
       max-parallel: 2
+
     steps:
       - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create and Push Multi-Arch Manifest
+      - name: Create and push multi-arch manifest
         run: |
           REGISTRY=ghcr.io/${{ github.repository }}
-
           RELEASE_TAG="${{ inputs.release_tag || env.GITHUB_REF_NAME }}"
 
-          if [ "${{ inputs.component }}" == "php" ]; then
+          if [ "${{ inputs.component }}" = "php" ]; then
             IMAGE_NAME=php-${{ matrix.php_type }}
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php_debug" ]; then
+          elif [ "${{ inputs.component }}" = "php_debug" ]; then
             IMAGE_NAME=php-${{ matrix.php_type }}-debug
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "php_blackfire" ]; then
+          elif [ "${{ inputs.component }}" = "php_blackfire" ]; then
             IMAGE_NAME=php-fpm-blackfire
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "supervisord" ]; then
+          elif [ "${{ inputs.component }}" = "supervisord" ]; then
             IMAGE_NAME=php-supervisord
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
-          elif [ "${{ inputs.component }}" == "nginx" ]; then
+          elif [ "${{ inputs.component }}" = "nginx" ]; then
             IMAGE_NAME=nginx
             IMAGE_TAG=${{ matrix.nginx_version }}-${RELEASE_TAG}
           fi
-          
-          docker manifest create \
-            $REGISTRY/$IMAGE_NAME:$IMAGE_TAG \
-            --amend $REGISTRY/amd-$IMAGE_NAME:$IMAGE_TAG \
-            --amend $REGISTRY/arm-$IMAGE_NAME:$IMAGE_TAG
-          
-          MANIFEST_REF=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG
-  
+
+          TARGET=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          AMD=$REGISTRY/amd-$IMAGE_NAME:$IMAGE_TAG
+          ARM=$REGISTRY/arm-$IMAGE_NAME:$IMAGE_TAG
+
           for attempt in 1 2 3 4 5; do
-            if docker manifest push "$MANIFEST_REF"; then
+            if docker buildx imagetools create \
+              --tag "$TARGET" \
+              "$AMD" \
+              "$ARM"; then
               exit 0
             fi
-        
+
             sleep_seconds=$((attempt * 15))
-            echo "Docker manifest push failed, retrying in ${sleep_seconds}s (attempt ${attempt}/5)"
+            echo "Manifest push failed, retrying in ${sleep_seconds}s (attempt ${attempt}/5)"
             sleep "$sleep_seconds"
           done
-          
-          docker manifest push "$MANIFEST_REF"
+
+          docker buildx imagetools create \
+            --tag "$TARGET" \
+            "$AMD" \
+            "$ARM"
