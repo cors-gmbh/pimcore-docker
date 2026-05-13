@@ -30,6 +30,7 @@ jobs:
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJSON(inputs.matrix) }}
+      max-parallel: 4
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -128,6 +129,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix: ${{ fromJSON(inputs.matrix_manifest) }}
+      max-parallel: 4
     steps:
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
