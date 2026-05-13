@@ -103,7 +103,19 @@ jobs:
       - name: Push Docker Image
         id: push
         run: |
-          docker push ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
+          IMAGE_REF=ghcr.io/${{ github.repository }}/$IMAGE_NAME:${{ env.IMAGE_TAG }}
+          
+          for attempt in 1 2 3 4 5; do
+            if docker push "$IMAGE_REF"; then
+              exit 0
+            fi
+          
+            sleep_seconds=$((attempt * 15))
+            echo "Docker push failed, retrying in ${sleep_seconds}s (attempt ${attempt}/5)"
+            sleep "$sleep_seconds"
+          done
+          
+          docker push "$IMAGE_REF"
 
       - name: Get Image Digest
         id: get_digest
@@ -129,7 +141,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix: ${{ fromJSON(inputs.matrix_manifest) }}
-      max-parallel: 4
+      max-parallel: 2
     steps:
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -162,4 +174,16 @@ jobs:
             --amend $REGISTRY/amd-$IMAGE_NAME:$IMAGE_TAG \
             --amend $REGISTRY/arm-$IMAGE_NAME:$IMAGE_TAG
           
-          docker manifest push $REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+          MANIFEST_REF=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG
+  
+          for attempt in 1 2 3 4 5; do
+            if docker manifest push "$MANIFEST_REF"; then
+              exit 0
+            fi
+        
+            sleep_seconds=$((attempt * 15))
+            echo "Docker manifest push failed, retrying in ${sleep_seconds}s (attempt ${attempt}/5)"
+            sleep "$sleep_seconds"
+          done
+          
+          docker manifest push "$MANIFEST_REF"
