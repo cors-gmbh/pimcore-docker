@@ -3,7 +3,6 @@ name: CORS Pimcore Docker Build
 on:
   push:
     branches:
-      - "7.0"
       - "8.0"
     tags:
       - "*"
