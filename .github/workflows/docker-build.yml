@@ -36,6 +36,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v4
         with:
@@ -82,6 +85,7 @@ jobs:
 
       - name: Build and push Docker image
         id: build
+        continue-on-error: true
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -89,6 +93,31 @@ jobs:
           push: true
           tags: ${{ steps.image.outputs.image_ref }}
           cache-from: type=registry,ref=${{ steps.image.outputs.image_ref }}
+          cache-to: type=inline
+          build-args: |
+            PHP_VERSION=${{ matrix.php_version || '' }}
+            PHP_TYPE=${{ matrix.php_type || '' }}
+            ALPINE_VERSION=${{ matrix.alpine || '' }}
+            NGINX_VERSION=${{ matrix.nginx_version || '' }}
+            FROM=${{ steps.image.outputs.from_image }}
+
+      # ghcr.io fails intermittently with "unknown blob" when parallel jobs
+      # push shared layers; one retry after the race has settled fixes it
+      - name: Wait before push retry
+        if: steps.build.outcome == 'failure'
+        run: sleep 30
+
+      - name: Build and push Docker image (retry)
+        id: build-retry
+        if: steps.build.outcome == 'failure'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ steps.image.outputs.dockerfile }}
+          push: true
+          tags: ${{ steps.image.outputs.image_ref }}
+          cache-from: type=registry,ref=${{ steps.image.outputs.image_ref }}
+          cache-to: type=inline
           build-args: |
             PHP_VERSION=${{ matrix.php_version || '' }}
             PHP_TYPE=${{ matrix.php_type || '' }}
@@ -100,7 +129,7 @@ jobs:
         uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}
-          subject-digest: ${{ steps.build.outputs.digest }}
+          subject-digest: ${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
           push-to-registry: true
 
   manifest:
