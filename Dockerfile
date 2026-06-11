@@ -41,7 +41,8 @@ RUN set -eux; \
     docker-php-ext-install gd; \
     docker-php-ext-configure pcntl --enable-pcntl; \
     docker-php-ext-install pcntl; \
-    pecl install apcu redis amqp; \
+    pecl install apcu redis; \
+    pecl install https://pecl.php.net/get/amqp-2.2.0.tgz; \
     docker-php-ext-enable redis apcu amqp; \
     cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime; \
     echo "${TIMEZONE}" > /etc/timezone; \
