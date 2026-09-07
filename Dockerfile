@@ -1,19 +1,25 @@
 ARG PHP_VERSION="8.4"
 ARG ALPINE_VERSION=3.24
 
-# All variants (fpm, cli, slim, debug, supervisord, blackfire) are built on the
-# same php:*-fpm-alpine base so they share every layer up to the variant-specific
-# one. The fpm image ships the php CLI binary as well, so there is no need for a
-# separate php:*-cli base.
+# One image per PHP/Alpine combination. It serves as php-fpm, cli (bin/console),
+# supervisord queue worker, xdebug and blackfire container; what runs is decided by
+# the command and environment variables at container start (see php/docker-entrypoint.sh):
+#
+#   command: php-fpm                                     -> fpm (default)
+#   command: bin/console ...                             -> cli
+#   command: supervisord                                 -> queue workers
+#   XDEBUG_ENABLED=1                                     -> loads xdebug
+#   BLACKFIRE_ENABLED=1                                  -> loads the blackfire probe
 #
 # Layer order, from bottom to top:
-#   1. runtime system packages (imagemagick, ghostscript, ffmpeg, fonts, ...)
+#   1. runtime system packages (imagemagick, ghostscript, ffmpeg, fonts, supervisor, ...)
 #   2. PHP extensions, compiled with a temporary build-deps set that is removed
-#      again in the same layer; only the actually needed shared libraries stay
-#   3. composer, scripts, php.ini              -> cors_php_base   (= *-slim images)
-#   4. LibreOffice                             -> cors_php_full   (= regular images)
+#      again in the same layer; only the actually needed shared libraries stay.
+#      xdebug and the blackfire probe are installed but not enabled.
+#   3. composer, scripts, config                     -> cors_pimcore_base  (= pimcore-slim)
+#   4. LibreOffice                                   -> cors_pimcore       (= pimcore)
 
-FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS cors_php_base
+FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS cors_pimcore_base
 
 ARG PHP_VERSION
 ARG ALPINE_VERSION
@@ -25,7 +31,7 @@ ENV TIMEZONE=Europe/Vienna
 # 1. runtime packages
 RUN set -eux; \
     apk update && apk upgrade && apk add --no-cache \
-      apk-tools curl wget unzip git fcgi tzdata \
+      apk-tools curl wget unzip git fcgi tzdata supervisor \
       musl-locales icu-data-full \
       ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       imagemagick ghostscript graphviz ffmpeg poppler-utils exiftool \
@@ -65,6 +71,24 @@ RUN set -eux; \
     pecl install https://pecl.php.net/get/amqp-2.2.0.tgz; \
     docker-php-ext-enable redis apcu amqp; \
     \
+    # xdebug: installed, enabled at runtime via XDEBUG_ENABLED=1
+    pecl install xdebug; \
+    \
+    # blackfire probe: installed, enabled at runtime via BLACKFIRE_ENABLED=1.
+    # Not available for every new PHP version right away, so a missing probe is
+    # a warning instead of a failed build.
+    extDir="$(php -r 'echo ini_get("extension_dir");')"; \
+    if curl -fsSL -A "Docker" \
+         "https://blackfire.io/api/v1/releases/probe/php/alpine/$(uname -m)/$(php -r 'echo PHP_MAJOR_VERSION.PHP_MINOR_VERSION;')" \
+         -o /tmp/blackfire-probe.tar.gz; then \
+      mkdir -p /tmp/blackfire; \
+      tar zxpf /tmp/blackfire-probe.tar.gz -C /tmp/blackfire; \
+      mv /tmp/blackfire/blackfire-*.so "$extDir/blackfire.so"; \
+      rm -rf /tmp/blackfire /tmp/blackfire-probe.tar.gz; \
+    else \
+      echo "WARNING: no blackfire probe available for PHP $(php -r 'echo PHP_VERSION;') on $(uname -m)"; \
+    fi; \
+    \
     # keep only the shared libraries the extensions actually link against, then
     # drop all -dev packages and compilers (same approach as the official php image)
     runDeps="$( \
@@ -98,33 +122,25 @@ COPY --chmod=755 php/docker-healthcheck.sh   /usr/local/bin/health
 COPY --chmod=755 php/docker-readiness.sh     /usr/local/bin/readiness
 COPY --chmod=755 php/docker-status.sh        /usr/local/bin/status
 
-COPY fpm/php.ini             /usr/local/etc/php/php.ini
-COPY fpm/php-config.conf     /usr/local/etc/php-fpm.conf
+COPY fpm/php.ini              /usr/local/etc/php/php.ini
+COPY fpm/php-config.conf      /usr/local/etc/php-fpm.conf
 COPY fpm/php-pool-config.conf /usr/local/etc/php-fpm.d/www.conf
 
+# optional ini snippets, added to PHP_INI_SCAN_DIR by the entrypoint on demand
+COPY php/optional/ /usr/local/etc/php/optional/
+
+COPY supervisord/supervisord.conf /etc/supervisor/supervisord.conf
+COPY supervisord/pimcore.conf     /etc/supervisor/conf.d/pimcore.conf
+COPY supervisord/coreshop._conf   /etc/supervisor/conf.d/coreshop._conf
+
 ENTRYPOINT ["docker-entrypoint"]
+CMD ["php-fpm"]
 
 # 4. LibreOffice (document -> PDF conversion in Pimcore). Only the modules
 # needed for headless conversion; base/math/draw/gtk/postgres connector are left out.
-FROM cors_php_base AS cors_php_full
+FROM cors_pimcore_base AS cors_pimcore
 
 RUN set -eux; \
     apk add --no-cache \
       libreoffice-common libreoffice-writer libreoffice-calc libreoffice-impress libreoffice-lang-en_us; \
     rm -rf /var/cache/apk/*
-
-#
-# final images: only ENTRYPOINT/CMD differ, so they add no layers
-#
-
-FROM cors_php_full AS cors_php_fpm
-CMD ["php-fpm"]
-
-FROM cors_php_full AS cors_php_cli
-CMD ["/bin/sh", "-c"]
-
-FROM cors_php_base AS cors_php_fpm_slim
-CMD ["php-fpm"]
-
-FROM cors_php_base AS cors_php_cli_slim
-CMD ["/bin/sh", "-c"]

@@ -38,40 +38,46 @@ We currently build the images for following Versions:
 
  - ***Alpine***: 3.23, 3.24
  - ***PHP***: 8.4, 8.5
- - ***Variants***: FPM, CLI, FPM-Slim, CLI-Slim, FPM-Debug, Supervisord, FPM-Blackfire
+ - ***Variants***: pimcore, pimcore-slim
  - ***Nginx***: 1.28, 1.29
-
-All PHP variants are built from the same `php:*-fpm-alpine` base in a single `docker buildx bake` run, so they share
-every layer up to the variant-specific one. Pulling `php-fpm`, `php-cli` and `php-supervisord` of the same tag costs
-the disk space of one image, not three.
 
 ## Available Images
 
-- ***PHP-FPM***: Configured with necessary extensions and settings for running Pimcore.
-- ***PHP-CLI***: Same image as PHP-FPM with a shell as default command, for migrations, cron and pre-hook jobs.
-- ***PHP-FPM Slim / PHP-CLI Slim***: Same as above but without LibreOffice (and its Qt/GTK/Mesa dependencies), roughly
-  650 MB smaller. Use them for projects that don't convert office documents to PDF/previews.
-- ***PHP-FPM Debug***: Configured with xdebug to also step-by-step debug.
-- ***Nginx***: Optimized web server configuration to serve Pimcore applications efficiently.
-- ***Supervisord***: Process control system to manage and monitor processes like PHP-FPM and Nginx.
-- ***Blackfire***: Integrated for performance profiling and monitoring.
+Since 10.0 there is one PHP image per PHP/Alpine combination. It serves as php-fpm, cli, queue worker, xdebug and
+blackfire container; what runs is decided by the command and environment variables at container start:
+
+| Purpose            | How                                                        |
+|--------------------|------------------------------------------------------------|
+| php-fpm            | default command `php-fpm`                                  |
+| cli / migrations   | `command: bin/console ...` or any shell command            |
+| queue workers      | `command: supervisord` (uses the bundled supervisord.conf) |
+| xdebug             | `XDEBUG_ENABLED=1` (`XDEBUG_HOST`, `XDEBUG_MODE`, `XDEBUG_CONFIG` optional) |
+| blackfire probe    | `BLACKFIRE_ENABLED=1` (`BLACKFIRE_AGENT_SOCKET` optional, default `tcp://127.0.0.1:8307`) |
+
+xdebug and the blackfire probe are part of the image but not loaded unless enabled, so there is no overhead in
+production. They cannot be enabled at the same time.
+
+- ***pimcore***: PHP-FPM with all extensions and tools Pimcore needs, including LibreOffice for document conversion.
+- ***pimcore-slim***: Same image without LibreOffice (and its Qt/GTK/Mesa dependencies), roughly 650 MB smaller.
+  Use it for projects that don't convert office documents to PDF/previews.
+- ***nginx***: Optimized web server configuration to serve Pimcore applications efficiently.
+
+Both PHP variants are built in one `docker buildx bake` run and share every layer except the LibreOffice one.
 
 Images are named like:
 
-- ***FPM***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.4-alpine3.24-10.0-LATEST
-- ***CLI***: ghcr.io/cors-gmbh/pimcore-docker/php-cli:8.4-alpine3.24-10.0-LATEST
-- ***FPM-Slim***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-slim:8.4-alpine3.24-10.0-LATEST
-- ***CLI-Slim***: ghcr.io/cors-gmbh/pimcore-docker/php-cli-slim:8.4-alpine3.24-10.0-LATEST
-- ***FPM-Debug***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.4-alpine3.24-10.0-LATEST
-- ***Supervisord***: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.4-alpine3.24-10.0-LATEST
-- ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.4-alpine3.24-10.0-LATEST
-- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.29-10.0-LATEST
+- ***pimcore***: ghcr.io/cors-gmbh/pimcore-docker/pimcore:8.4-alpine3.24-10.0-LATEST
+- ***pimcore-slim***: ghcr.io/cors-gmbh/pimcore-docker/pimcore-slim:8.4-alpine3.24-10.0-LATEST
+- ***nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.29-10.0-LATEST
+
+Removed in 10.0: `php-fpm`, `php-cli`, `php-fpm-debug`, `php-supervisord` and `php-fpm-blackfire`. Replace them with
+`pimcore` and the command/environment from the table above.
 
 ### Building locally
 
 ```sh
-docker buildx bake --load                                      # PHP 8.4 / Alpine 3.24, all four PHP variants
-PHP_VERSION=8.5 ALPINE_VERSION=3.23 docker buildx bake --load fpm-slim
+docker buildx bake --load                                      # PHP 8.4 / Alpine 3.24, both variants
+PHP_VERSION=8.5 ALPINE_VERSION=3.23 docker buildx bake --load pimcore-slim
 ```
 
 ## Getting Started
@@ -111,30 +117,25 @@ services:
       - php-debug
 
   php:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.4-alpine3.24-10.0-LATEST
-    command: 'php-fpm'
-    entrypoint: docker-php-entrypoint
+    image: ghcr.io/cors-gmbh/pimcore-docker/pimcore:8.4-alpine3.24-10.0-LATEST
     depends_on:
       - db
     volumes:
       - ./:/var/www/html:cached
 
   php-debug:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.4-alpine3.24-10.0-LATEST
-    command: 'php-fpm'
-    entrypoint: xdebug-entrypoint
+    image: ghcr.io/cors-gmbh/pimcore-docker/pimcore:8.4-alpine3.24-10.0-LATEST
     depends_on:
       - db
     volumes:
       - ./:/var/www/html:cached
-    networks:
-      - kwizda
-      - cors_dev
     environment:
+      - XDEBUG_ENABLED=1
       - PHP_IDE_CONFIG=serverName=localhost
 
   supervisord:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.4-alpine3.24-10.0-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/pimcore:8.4-alpine3.24-10.0-LATEST
+    command: supervisord
     depends_on:
       - db
     volumes:
@@ -153,11 +154,10 @@ Manifest lives. For now, we only have this setup for Gitlab.
 This is the dockerfile we use in the Projects. It is a multi-stage build that builds several images for several
 purposes:
 
-- ***FPM***: FPM Server with the application code
-- ***CLI***: CLI Image mainly to be slimmer and to run migrations and pre-hook jobs
-- ***Supervisor***: To run queue workers
+- ***PHP***: One image with the application code. It runs as FPM server, migration/pre-hook job (`bin/console`),
+  queue worker (`supervisord`) or with the blackfire probe (`BLACKFIRE_ENABLED=1`), depending on the Kubernetes
+  manifest.
 - ***NGINX***: Frontend HTTP Server
-- ***Blackfire***: For Production Profiling, which is our default deployment anyway
 - ***Node***: To build webpack encore and copy it to the PHP Containers and NGINX.
 
 ```Dockerfile
@@ -182,7 +182,7 @@ COPY themes /var/www/html/themes
 RUN set -eux; \
     npm run build;
 
-FROM ghcr.io/cors-gmbh/pimcore-docker/php-fpm:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php
+FROM ghcr.io/cors-gmbh/pimcore-docker/pimcore:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php
 
 WORKDIR /var/www/html
 
@@ -221,39 +221,8 @@ RUN set -eux; \
 
 COPY --chown=www-data:www-data --from=cors_node /var/www/html/public public/
 
-FROM ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php_supervisord
-
 COPY .docker/supervisord/project.conf /etc/supervisor/conf.d/project.conf
 COPY .docker/supervisord/coreshop.conf /etc/supervisor/conf.d/coreshop.conf
-COPY .docker/supervisord/pimcore.conf /etc/supervisor/conf.d/pimcore.conf
-
-ARG APP_ENV=prod
-ENV APP_ENV=$APP_ENV
-ENV APP_DEBUG=0
-
-USER www-data
-
-COPY --from=cors_php /var/www/html /var/www/html
-
-FROM ghcr.io/cors-gmbh/pimcore-docker/php-cli:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php_cli
-
-ARG APP_ENV=prod
-ENV APP_ENV=$APP_ENV
-ENV APP_DEBUG=0
-
-USER www-data
-
-COPY --from=cors_php /var/www/html /var/www/html
-
-FROM ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:${PHP_VERSION}-alpine${ALPINE_VERSION}-${DOCKER_BASE_VERSION} AS cors_php_blackfire
-
-ARG APP_ENV=prod
-ENV APP_ENV=$APP_ENV
-ENV APP_DEBUG=0
-
-USER www-data
-
-COPY --from=cors_php /var/www/html /var/www/html
 
 FROM ghcr.io/cors-gmbh/pimcore-docker/nginx:${NGINX_VERSION}-${DOCKER_BASE_VERSION} AS cors_nginx
 

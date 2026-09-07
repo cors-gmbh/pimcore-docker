@@ -13,8 +13,10 @@ on:
 env:
   ARCHITECTURES: 'amd arm'
   PHP_VERSIONS: '8.4 8.5'
-  PHP_TYPES: 'fpm cli fpm-slim cli-slim'
   ALPINE_VERSIONS: '3.23 3.24'
+  # both variants of one php/alpine combination are built together in one bake
+  # run so they share layers; the variant is only a manifest axis
+  VARIANTS: 'pimcore pimcore-slim'
   NGINX_VERSIONS: '1.28 1.29'
   INCOMPATIBLE_MATRIX: >
     []
@@ -25,12 +27,6 @@ jobs:
     outputs:
       php_matrix: ${{ steps.matrix.outputs.php_matrix }}
       php_manifest: ${{ steps.matrix.outputs.php_manifest }}
-      php_debug_matrix: ${{ steps.matrix.outputs.php_debug_matrix }}
-      php_debug_manifest: ${{ steps.matrix.outputs.php_debug_manifest }}
-      php_blackfire_matrix: ${{ steps.matrix.outputs.php_blackfire_matrix }}
-      php_blackfire_manifest: ${{ steps.matrix.outputs.php_blackfire_manifest }}
-      supervisord_matrix: ${{ steps.matrix.outputs.supervisord_matrix }}
-      supervisord_manifest: ${{ steps.matrix.outputs.supervisord_manifest }}
       nginx_matrix: ${{ steps.matrix.outputs.nginx_matrix }}
       nginx_manifest: ${{ steps.matrix.outputs.nginx_manifest }}
     steps:
@@ -39,26 +35,16 @@ jobs:
         run: |
           set -e
 
-          ########################
-          ## Parse env variables into arrays
-          ########################
-
           IFS=' ' read -r -a ARCH <<< "$ARCHITECTURES"
           IFS=' ' read -r -a PHP <<< "$PHP_VERSIONS"
-          IFS=' ' read -r -a TYPES <<< "$PHP_TYPES"
           IFS=' ' read -r -a ALPINE <<< "$ALPINE_VERSIONS"
+          IFS=' ' read -r -a VARIANT <<< "$VARIANTS"
           IFS=' ' read -r -a NGINX <<< "$NGINX_VERSIONS"
-
-          ########################
-          ## Incompatibility Check Function
-          ########################
 
           is_incompatible_combination() {
             declare -A combination
             while [[ "$#" -gt 1 ]]; do
-              key="$1"
-              value="$2"
-              combination["$key"]="$value"
+              combination["$1"]="$2"
               shift 2
             done
 
@@ -78,92 +64,44 @@ jobs:
             return 1
           }
 
-          ########################
-          ## Matrix Generator Function
-          ########################
-
-          generate_matrix() {
-            local component="$1"
-            local output_var="$2"
-            local build_axes="$3"
-
-            local matrix='{"include":['
-
-            if [[ "$component" == "php" && "$build_axes" == "build" ]]; then
-              # all php variants (fpm, cli, *-slim) of one php/alpine combination are
-              # built together in one bake run so they share layers -> no php_type axis
-              for php_version in "${PHP[@]}"; do
-                for alpine in "${ALPINE[@]}"; do
-                  for arch in "${ARCH[@]}"; do
-                    if is_incompatible_combination php_version "$php_version" alpine "$alpine" arch "$arch"; then continue; fi
-                    matrix+="{\"arch\":\"$arch\",\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
-                  done
-                done
-              done
-
-            elif [[ "$component" == "php" || "$component" == "php_debug" ]]; then
-              for php_version in "${PHP[@]}"; do
-                for php_type in "${TYPES[@]}"; do
-                  for alpine in "${ALPINE[@]}"; do
-                    if [[ "$component" == "php_debug" && "$php_type" != "fpm" ]]; then continue; fi
-                    if [[ "$build_axes" == "build" ]]; then
-                      for arch in "${ARCH[@]}"; do
-                        if is_incompatible_combination php_version "$php_version" php_type "$php_type" alpine "$alpine" arch "$arch"; then continue; fi
-                        matrix+="{\"arch\":\"$arch\",\"php_version\":\"$php_version\",\"php_type\":\"$php_type\",\"alpine\":\"$alpine\"},"
-                      done
-                    else
-                      if is_incompatible_combination php_version "$php_version" php_type "$php_type" alpine "$alpine"; then continue; fi
-                      matrix+="{\"php_version\":\"$php_version\",\"php_type\":\"$php_type\",\"alpine\":\"$alpine\"},"
-                    fi
-                  done
-                done
-              done
-
-            elif [[ "$component" == "php_blackfire" || "$component" == "supervisord" ]]; then
-              for php_version in "${PHP[@]}"; do
-                for alpine in "${ALPINE[@]}"; do
-                  if [[ "$build_axes" == "build" ]]; then
-                    for arch in "${ARCH[@]}"; do
-                      if is_incompatible_combination php_version "$php_version" alpine "$alpine" arch "$arch"; then continue; fi
-                      matrix+="{\"arch\":\"$arch\",\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
-                    done
-                  else
-                    if is_incompatible_combination php_version "$php_version" alpine "$alpine"; then continue; fi
-                    matrix+="{\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
-                  fi
-                done
-              done
-
-            elif [[ "$component" == "nginx" ]]; then
-              for nginx_version in "${NGINX[@]}"; do
-                if [[ "$build_axes" == "build" ]]; then
-                  for arch in "${ARCH[@]}"; do
-                    if is_incompatible_combination nginx_version "$nginx_version" arch "$arch"; then continue; fi
-                    matrix+="{\"arch\":\"$arch\",\"nginx_version\":\"$nginx_version\"},"
-                  done
-                else
-                  if is_incompatible_combination nginx_version "$nginx_version"; then continue; fi
-                  matrix+="{\"nginx_version\":\"$nginx_version\"},"
-                fi
-              done
-            fi
-
-            matrix="${matrix%,}]}"
-            echo "$output_var=$matrix" >> $GITHUB_OUTPUT
-
-            echo "::group::Generated matrix for $component ($output_var)"
+          emit() {
+            local output_var="$1" matrix="$2"
+            matrix="{\"include\":[${matrix%,}]}"
+            echo "$output_var=$matrix" >> "$GITHUB_OUTPUT"
+            echo "::group::$output_var"
             echo "$matrix" | jq .
             echo "::endgroup::"
           }
 
-          ########################
-          ## Build for all components
-          ########################
-
-          for component in php php_debug php_blackfire supervisord nginx; do
-            generate_matrix "$component" "${component//-/_}_matrix" "build"
-            generate_matrix "$component" "${component//-/_}_manifest" "manifest"
+          php_matrix=""
+          php_manifest=""
+          for php_version in "${PHP[@]}"; do
+            for alpine in "${ALPINE[@]}"; do
+              for arch in "${ARCH[@]}"; do
+                if is_incompatible_combination php_version "$php_version" alpine "$alpine" arch "$arch"; then continue; fi
+                php_matrix+="{\"arch\":\"$arch\",\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
+              done
+              for variant in "${VARIANT[@]}"; do
+                if is_incompatible_combination php_version "$php_version" alpine "$alpine"; then continue; fi
+                php_manifest+="{\"variant\":\"$variant\",\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
+              done
+            done
           done
+          emit php_matrix "$php_matrix"
+          emit php_manifest "$php_manifest"
+
+          nginx_matrix=""
+          nginx_manifest=""
+          for nginx_version in "${NGINX[@]}"; do
+            for arch in "${ARCH[@]}"; do
+              if is_incompatible_combination nginx_version "$nginx_version" arch "$arch"; then continue; fi
+              nginx_matrix+="{\"arch\":\"$arch\",\"nginx_version\":\"$nginx_version\"},"
+            done
+            if is_incompatible_combination nginx_version "$nginx_version"; then continue; fi
+            nginx_manifest+="{\"nginx_version\":\"$nginx_version\"},"
+          done
+          emit nginx_matrix "$nginx_matrix"
+          emit nginx_manifest "$nginx_manifest"
 
   build_php:
     needs: matrix
@@ -172,33 +110,6 @@ jobs:
       component: php
       matrix: ${{ needs.matrix.outputs.php_matrix }}
       matrix_manifest: ${{ needs.matrix.outputs.php_manifest }}
-      release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
-
-  build_php_debug:
-    needs: [ build_php, matrix ]
-    uses: ./.github/workflows/docker-build.yml
-    with:
-      component: php_debug
-      matrix: ${{ needs.matrix.outputs.php_debug_matrix }}
-      matrix_manifest: ${{ needs.matrix.outputs.php_debug_manifest }}
-      release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
-
-  build_php_blackfire:
-    needs: [ build_php, matrix ]
-    uses: ./.github/workflows/docker-build.yml
-    with:
-      component: php_blackfire
-      matrix: ${{ needs.matrix.outputs.php_blackfire_matrix }}
-      matrix_manifest: ${{ needs.matrix.outputs.php_blackfire_manifest }}
-      release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
-
-  build_supervisord:
-    needs: [ build_php, matrix ]
-    uses: ./.github/workflows/docker-build.yml
-    with:
-      component: supervisord
-      matrix: ${{ needs.matrix.outputs.supervisord_matrix }}
-      matrix_manifest: ${{ needs.matrix.outputs.supervisord_manifest }}
       release_tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('{0}-LATEST', github.ref_name) }}
 
   build_nginx:

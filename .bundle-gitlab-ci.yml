@@ -8,7 +8,7 @@ variables:
   TEST_LINT_YAML: "true"
   TEST_LINT_CONTAINER: "true"
   TEST_PSALM: "true"
-  TEST_IMAGE: ghcr.io/cors-gmbh/pimcore-docker/php-cli
+  TEST_IMAGE: ghcr.io/cors-gmbh/pimcore-docker/pimcore
 
 read_env:
   stage: prepare
