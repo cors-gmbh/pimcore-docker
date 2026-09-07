@@ -3,7 +3,7 @@ name: CORS Pimcore Docker Build
 on:
   push:
     branches:
-      - "9.0"
+      - "10.0"
     tags:
       - "*"
   workflow_dispatch: ~
@@ -13,7 +13,7 @@ on:
 env:
   ARCHITECTURES: 'amd arm'
   PHP_VERSIONS: '8.4 8.5'
-  PHP_TYPES: 'fpm cli'
+  PHP_TYPES: 'fpm cli fpm-slim cli-slim'
   ALPINE_VERSIONS: '3.23 3.24'
   NGINX_VERSIONS: '1.28 1.29'
   INCOMPATIBLE_MATRIX: >
@@ -89,7 +89,19 @@ jobs:
 
             local matrix='{"include":['
 
-            if [[ "$component" == "php" || "$component" == "php_debug" ]]; then
+            if [[ "$component" == "php" && "$build_axes" == "build" ]]; then
+              # all php variants (fpm, cli, *-slim) of one php/alpine combination are
+              # built together in one bake run so they share layers -> no php_type axis
+              for php_version in "${PHP[@]}"; do
+                for alpine in "${ALPINE[@]}"; do
+                  for arch in "${ARCH[@]}"; do
+                    if is_incompatible_combination php_version "$php_version" alpine "$alpine" arch "$arch"; then continue; fi
+                    matrix+="{\"arch\":\"$arch\",\"php_version\":\"$php_version\",\"alpine\":\"$alpine\"},"
+                  done
+                done
+              done
+
+            elif [[ "$component" == "php" || "$component" == "php_debug" ]]; then
               for php_version in "${PHP[@]}"; do
                 for php_type in "${TYPES[@]}"; do
                   for alpine in "${ALPINE[@]}"; do

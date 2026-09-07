@@ -38,12 +38,19 @@ We currently build the images for following Versions:
 
  - ***Alpine***: 3.23, 3.24
  - ***PHP***: 8.4, 8.5
- - ***Variants***: CLI, FPM, FPM-Debug, Supervisord, FPM-Blackfire
+ - ***Variants***: FPM, CLI, FPM-Slim, CLI-Slim, FPM-Debug, Supervisord, FPM-Blackfire
  - ***Nginx***: 1.28, 1.29
+
+All PHP variants are built from the same `php:*-fpm-alpine` base in a single `docker buildx bake` run, so they share
+every layer up to the variant-specific one. Pulling `php-fpm`, `php-cli` and `php-supervisord` of the same tag costs
+the disk space of one image, not three.
 
 ## Available Images
 
 - ***PHP-FPM***: Configured with necessary extensions and settings for running Pimcore.
+- ***PHP-CLI***: Same image as PHP-FPM with a shell as default command, for migrations, cron and pre-hook jobs.
+- ***PHP-FPM Slim / PHP-CLI Slim***: Same as above but without LibreOffice (and its Qt/GTK/Mesa dependencies), roughly
+  650 MB smaller. Use them for projects that don't convert office documents to PDF/previews.
 - ***PHP-FPM Debug***: Configured with xdebug to also step-by-step debug.
 - ***Nginx***: Optimized web server configuration to serve Pimcore applications efficiently.
 - ***Supervisord***: Process control system to manage and monitor processes like PHP-FPM and Nginx.
@@ -51,11 +58,21 @@ We currently build the images for following Versions:
 
 Images are named like:
 
-- ***FPM***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.4-alpine3.24-9.0-LATEST
-- ***FPM-Debug***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.4-alpine3.24-9.0-LATEST
-- ***Supervisord***: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.4-alpine3.24-9.0-LATEST
-- ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.4-alpine3.24-9.0-LATEST
-- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.29-9.0-LATEST
+- ***FPM***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.4-alpine3.24-10.0-LATEST
+- ***CLI***: ghcr.io/cors-gmbh/pimcore-docker/php-cli:8.4-alpine3.24-10.0-LATEST
+- ***FPM-Slim***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-slim:8.4-alpine3.24-10.0-LATEST
+- ***CLI-Slim***: ghcr.io/cors-gmbh/pimcore-docker/php-cli-slim:8.4-alpine3.24-10.0-LATEST
+- ***FPM-Debug***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.4-alpine3.24-10.0-LATEST
+- ***Supervisord***: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.4-alpine3.24-10.0-LATEST
+- ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.4-alpine3.24-10.0-LATEST
+- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.29-10.0-LATEST
+
+### Building locally
+
+```sh
+docker buildx bake --load                                      # PHP 8.4 / Alpine 3.24, all four PHP variants
+PHP_VERSION=8.5 ALPINE_VERSION=3.23 docker buildx bake --load fpm-slim
+```
 
 ## Getting Started
 
@@ -94,7 +111,7 @@ services:
       - php-debug
 
   php:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.4-alpine3.24-9.0-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm:8.4-alpine3.24-10.0-LATEST
     command: 'php-fpm'
     entrypoint: docker-php-entrypoint
     depends_on:
@@ -103,7 +120,7 @@ services:
       - ./:/var/www/html:cached
 
   php-debug:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.4-alpine3.24-9.0-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.4-alpine3.24-10.0-LATEST
     command: 'php-fpm'
     entrypoint: xdebug-entrypoint
     depends_on:
@@ -117,7 +134,7 @@ services:
       - PHP_IDE_CONFIG=serverName=localhost
 
   supervisord:
-    image: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.4-alpine3.24-9.0-LATEST
+    image: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.4-alpine3.24-10.0-LATEST
     depends_on:
       - db
     volumes:

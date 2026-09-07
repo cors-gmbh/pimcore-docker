@@ -55,7 +55,8 @@ jobs:
           FROM_IMAGE=""
 
           if [ "${{ inputs.component }}" = "php" ]; then
-            IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}
+            # built via docker-bake.hcl, see "Bake and push PHP images" below
+            IMAGE_NAME=${{ matrix.arch }}-php
             IMAGE_TAG=${{ matrix.php_version }}-alpine${{ matrix.alpine }}-${RELEASE_TAG}
           elif [ "${{ inputs.component }}" = "php_debug" ]; then
             IMAGE_NAME=${{ matrix.arch }}-php-${{ matrix.php_type }}-debug
@@ -83,8 +84,67 @@ jobs:
           echo "dockerfile=$DOCKERFILE" >> "$GITHUB_OUTPUT"
           echo "from_image=$FROM_IMAGE" >> "$GITHUB_OUTPUT"
 
+      # ghcr.io fails intermittently with "unknown blob" when parallel jobs
+      # push shared layers; retry once after the race has settled
+      - name: Bake and push PHP images
+        id: bake
+        if: inputs.component == 'php'
+        env:
+          REGISTRY: ghcr.io/${{ github.repository }}
+          ARCH_PREFIX: ${{ matrix.arch }}-
+          PHP_VERSION: ${{ matrix.php_version }}
+          ALPINE_VERSION: ${{ matrix.alpine }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          for attempt in 1 2; do
+            if docker buildx bake --push --metadata-file bake-metadata.json; then
+              break
+            fi
+            if [ "$attempt" = 2 ]; then exit 1; fi
+            echo "bake failed, retrying in 30s"
+            sleep 30
+          done
+
+          for target in fpm cli fpm-slim cli-slim; do
+            digest=$(jq -r --arg t "$target" '.[$t]["containerimage.digest"]' bake-metadata.json)
+            echo "digest_${target//-/_}=$digest" >> "$GITHUB_OUTPUT"
+          done
+
+      - name: Attest php-fpm
+        if: inputs.component == 'php'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm
+          subject-digest: ${{ steps.bake.outputs.digest_fpm }}
+          push-to-registry: true
+
+      - name: Attest php-cli
+        if: inputs.component == 'php'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-cli
+          subject-digest: ${{ steps.bake.outputs.digest_cli }}
+          push-to-registry: true
+
+      - name: Attest php-fpm-slim
+        if: inputs.component == 'php'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-fpm-slim
+          subject-digest: ${{ steps.bake.outputs.digest_fpm_slim }}
+          push-to-registry: true
+
+      - name: Attest php-cli-slim
+        if: inputs.component == 'php'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-php-cli-slim
+          subject-digest: ${{ steps.bake.outputs.digest_cli_slim }}
+          push-to-registry: true
+
       - name: Build and push Docker image
         id: build
+        if: inputs.component != 'php'
         continue-on-error: true
         uses: docker/build-push-action@v7
         with:
@@ -101,15 +161,13 @@ jobs:
             NGINX_VERSION=${{ matrix.nginx_version || '' }}
             FROM=${{ steps.image.outputs.from_image }}
 
-      # ghcr.io fails intermittently with "unknown blob" when parallel jobs
-      # push shared layers; one retry after the race has settled fixes it
       - name: Wait before push retry
-        if: steps.build.outcome == 'failure'
+        if: inputs.component != 'php' && steps.build.outcome == 'failure'
         run: sleep 30
 
       - name: Build and push Docker image (retry)
         id: build-retry
-        if: steps.build.outcome == 'failure'
+        if: inputs.component != 'php' && steps.build.outcome == 'failure'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -126,6 +184,7 @@ jobs:
             FROM=${{ steps.image.outputs.from_image }}
 
       - name: Generate Artifact Attestation
+        if: inputs.component != 'php'
         uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}
