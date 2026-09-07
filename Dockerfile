@@ -36,7 +36,7 @@ RUN set -eux; \
       ttf-dejavu ttf-droid ttf-freefont ttf-liberation \
       imagemagick ghostscript graphviz ffmpeg poppler-utils exiftool \
       pngcrush jpegoptim zopfli libwebp-tools \
-      libjpeg libxpm libavif libheif librsvg libwmf lcms2 openblas; \
+      libjpeg libxpm libavif libheif librsvg libwmf lcms2; \
     cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime; \
     echo "${TIMEZONE}" > /etc/timezone; \
     apk del tzdata; \
