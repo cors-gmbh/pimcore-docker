@@ -4,6 +4,7 @@ numprocs=1
 startsecs=0
 autostart=true
 autorestart=true
+stopwaitsecs=120
 process_name=%(program_name)s_%(process_num)02d
 stdout_logfile=/dev/fd/1
 stdout_logfile_maxbytes=0

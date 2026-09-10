@@ -145,6 +145,41 @@ volumes:
   pimcore-database:
 ```
 
+### Queue workers
+
+In Kubernetes the [pimcore-chart](https://github.com/cors-gmbh/pimcore-chart) runs one Deployment per queue group
+(`consumers.enabled`), so supervisord is not involved there. Locally there are two options:
+
+- **One container with supervisord**: `command: supervisord` in the `pimcore` image runs the workers from the bundled
+  supervisord config. Programs get 120 seconds (`stopwaitsecs`) to finish their current message on shutdown.
+- **One compose service per worker**, mirroring the Kubernetes setup. Docker restarts the process when it exits
+  because of `--time-limit` or `--memory-limit`; `stop_grace_period` is the local equivalent of
+  `terminationGracePeriodSeconds`:
+
+```yaml
+  worker-core:
+    image: ghcr.io/cors-gmbh/pimcore-docker/pimcore:8.4-alpine3.24-10.0-LATEST
+    command: bin/console messenger:consume pimcore_core pimcore_maintenance --time-limit=300 --memory-limit=250M
+    restart: unless-stopped
+    stop_grace_period: 2m
+    profiles: [workers]
+    depends_on: [db]
+    volumes:
+      - ./:/var/www/html:cached
+
+  worker-images:
+    image: ghcr.io/cors-gmbh/pimcore-docker/pimcore:8.4-alpine3.24-10.0-LATEST
+    command: bin/console messenger:consume pimcore_image_optimize --time-limit=300 --memory-limit=250M
+    restart: unless-stopped
+    stop_grace_period: 10m
+    profiles: [workers]
+    depends_on: [db]
+    volumes:
+      - ./:/var/www/html:cached
+```
+
+Start them with `docker compose --profile workers up`.
+
 ### Dockerfile
 
 For Production and Stage Build, we then have our gitlab-ci pipeline [.project-gitlab-ci.yml](.project-gitlab-ci.yml)
