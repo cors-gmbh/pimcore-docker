@@ -50,7 +50,8 @@ blackfire container; what runs is decided by the command and environment variabl
 |--------------------|------------------------------------------------------------|
 | php-fpm            | default command `php-fpm`                                  |
 | cli / migrations   | `command: bin/console ...` or any shell command            |
-| queue workers      | `command: supervisord` (uses the bundled supervisord.conf) |
+| queue workers (local) | `command: supervisord` (uses the bundled supervisord.conf) |
+| one queue worker (Kubernetes) | `command: consume-loop <queues> --time-limit=600 ...` |
 | xdebug             | `XDEBUG_ENABLED=1` (`XDEBUG_HOST`, `XDEBUG_MODE`, `XDEBUG_CONFIG` optional) |
 | blackfire probe    | `BLACKFIRE_ENABLED=1` (`BLACKFIRE_AGENT_SOCKET` optional, default `tcp://127.0.0.1:8307`) |
 
@@ -148,7 +149,11 @@ volumes:
 ### Queue workers
 
 In Kubernetes the [pimcore-chart](https://github.com/cors-gmbh/pimcore-chart) runs one Deployment per queue group
-(`consumers.enabled`), so supervisord is not involved there. Locally there are two options:
+(`consumers.enabled`) using `consume-loop`: it runs `messenger:consume` in a loop, so the regular exits after
+`--time-limit` / `--memory-limit` restart the worker inside the container instead of the pod (no restart counter,
+no CrashLoopBackOff on short limits). SIGTERM is forwarded to the worker and awaited, so the current message
+finishes; a non-zero worker exit ends the loop with that code, so real crashes still surface. Locally there are
+two options:
 
 - **One container with supervisord**: `command: supervisord` in the `pimcore` image runs the workers from the bundled
   supervisord config. Programs get 120 seconds (`stopwaitsecs`) to finish their current message on shutdown.

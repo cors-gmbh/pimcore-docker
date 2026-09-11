@@ -7,7 +7,8 @@ ARG ALPINE_VERSION=3.24
 #
 #   command: php-fpm                                     -> fpm (default)
 #   command: bin/console ...                             -> cli
-#   command: supervisord                                 -> queue workers
+#   command: supervisord                                 -> queue workers (local)
+#   command: consume-loop <queues> --time-limit=600      -> one queue worker, restarted in place (Kubernetes)
 #   XDEBUG_ENABLED=1                                     -> loads xdebug
 #   BLACKFIRE_ENABLED=1                                  -> loads the blackfire probe
 #
@@ -121,6 +122,7 @@ COPY --chmod=755 php/docker-wait-pimcore.sh  /usr/local/bin/wait_pimcore
 COPY --chmod=755 php/docker-healthcheck.sh   /usr/local/bin/health
 COPY --chmod=755 php/docker-readiness.sh     /usr/local/bin/readiness
 COPY --chmod=755 php/docker-status.sh        /usr/local/bin/status
+COPY --chmod=755 php/docker-consume-loop.sh  /usr/local/bin/consume-loop
 
 COPY fpm/php.ini              /usr/local/etc/php/php.ini
 COPY fpm/php-config.conf      /usr/local/etc/php-fpm.conf
