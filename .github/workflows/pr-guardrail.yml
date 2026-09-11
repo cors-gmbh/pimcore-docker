@@ -1,0 +1,52 @@
+# ⚠️  ZENTRAL VERWALTETE DATEI — NICHT LOKAL ÄNDERN!
+#
+# Diese Datei wird aus cors-gmbh/shared-workflows per File-Sync verteilt
+# (Quelle: templates/pr-guardrail.yml). Lokale Änderungen werden beim
+# nächsten Sync-Lauf per PR überschrieben.
+#
+# Regeln, Bypass und FAQ: docs/GUARDRAILS.md in cors-gmbh/shared-workflows.
+
+name: PR Guardrail
+
+on:
+  # pull_request_target statt pull_request: läuft immer mit dem Code und den
+  # Secrets des Basis-Branches. Der Guardrail checkt NIE PR-Code aus —
+  # wichtig, weil z. B. Bundle-Repos auch PRs von Forks bekommen können.
+  pull_request_target:
+    types: [opened, reopened, edited, ready_for_review, labeled, unlabeled]
+  # Reagiert auf abgeschlossene CI-Läufe (R5) …
+  check_suite:
+    types: [completed]
+  # … und auf klassische Commit-Statuses externer CI-Systeme.
+  status: {}
+
+permissions:
+  actions: read
+
+# Ein Lauf pro PR: neue Events brechen laufende Prüfungen desselben PRs ab.
+concurrency:
+  group: pr-guardrail-${{ github.event.pull_request.number || github.event.check_suite.head_sha || github.event.sha || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  guardrail:
+    uses: cors-gmbh/shared-workflows/.github/workflows/pr-guardrail.yml@v1
+    with:
+      # Enforce-Modus: Verstöße setzen den PR auf Draft und der Check schlägt
+      # fehl. Für reinen Hinweismodus (nur Kommentar) auf `false` stellen.
+      enforce: true
+      # Bot-PRs (z. B. Renovate/Dependabot) überspringen R1-R3/R6 automatisch,
+      # die CI-Regel (R5) gilt weiterhin.
+      # Weitere Optionen (Defaults in Klammern):
+      # min-body-chars: 50        # Mindestlänge der PR-Beschreibung (50)
+      # require-issue-open: true  # Issue muss offen sein (true)
+      # bots: 'renovate[bot],dependabot[bot],github-actions[bot]'
+      # bot-require-body: false   # R4 auch für Bot-PRs (false)
+    secrets: inherit
+
+  # Legt den PR automatisch in die Projects-Boards der verknüpften Issues.
+  # Zum Deaktivieren auskommentieren.
+  pr-to-project:
+    if: github.event_name == 'pull_request_target'
+    uses: cors-gmbh/shared-workflows/.github/workflows/pr-to-project.yml@v1
+    secrets: inherit
