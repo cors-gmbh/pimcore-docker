@@ -4,7 +4,7 @@
 # CORS Pimcore Docker Images
 
 This repository provides a Docker-based environment for running and managing [Pimcore](https://pimcore.com), a leading
-open-source digital experience platform (DXP). It enables developers to quickly set up, develop, and test Pimcore
+open-core digital experience platform (DXP). It enables developers to quickly set up, develop, and test Pimcore
 projects using a preconfigured Docker setup.
 
 These optimized Docker images, based on Alpine Linux, are designed to run Pimcore in production environments,
