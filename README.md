@@ -187,9 +187,10 @@ Start them with `docker compose --profile workers up`.
 
 ### Dockerfile
 
-For Production and Stage Build, we then have our gitlab-ci pipeline [.project-gitlab-ci.yml](.project-gitlab-ci.yml)
-which builds our project, pushes it to Google Artifact Registry and we update a separate project where the Kubernetes
-Manifest lives. For now, we only have this setup for Gitlab.
+For Production and Stage builds we use the reusable GitHub workflows in
+[cors-gmbh/shared-workflows](https://github.com/cors-gmbh/shared-workflows) (`project-ci` / `containerize`): they build
+the project image, push it to Google Artifact Registry and bump the image tag in a separate manifest repo that holds
+the Helm values for [pimcore-chart](https://github.com/cors-gmbh/pimcore-chart).
 
 This is the dockerfile we use in the Projects. It is a multi-stage build that builds several images for several
 purposes:
