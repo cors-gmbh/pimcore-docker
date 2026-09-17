@@ -19,13 +19,13 @@ variables:
   TEST_LINT_YAML: "true"
   TEST_LINT_CONTAINER: "true"
   GCP_URL: europe-west3-docker.pkg.dev
-  TEST_IMAGE: git.e-conomix.at:5050/cors/docker/php-alpine-cli
+  TEST_IMAGE: ghcr.io/cors-gmbh/pimcore-docker/pimcore-slim
   REGISTRY_URL: $GCP_URL/cors-wolke/cors/docker
   ADDITIONAL_BRANCH: any-additional-branch-to-build
 
 test:
   stage: test
-  image: $TEST_IMAGE:$PHP_VERSION-$DOCKER_BASE_VERSION
+  image: $TEST_IMAGE:$PHP_VERSION-alpine$ALPINE_VERSION-$DOCKER_BASE_VERSION
   variables:
     DATABASE_HOST: ""
     DATABASE_PORT: ""
@@ -71,10 +71,7 @@ build_and_push:
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64 | tr -d '\n')\"}, \"https://$GCP_URL\":{\"auth\":\"$(echo -n "_json_key":$(base64 -d $GOOGLE_ARTIFACT_REGISTRY) | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
     - export GCP_REGISTRY_IMAGE=$(echo "$GCP_URL/cors-wolke/$CI_PROJECT_PATH" | tr '[:upper:]' '[:lower:]')
   script:
-    - /kaniko/warmer --image $GCP_REGISTRY_IMAGE/php-alpine-fpm:LATEST-$CI_COMMIT_REF_NAME
-    - /kaniko/warmer --image $GCP_REGISTRY_IMAGE/php-alpine-fpm-blackfire:LATEST-$CI_COMMIT_REF_NAME
-    - /kaniko/warmer --image $GCP_REGISTRY_IMAGE/php-alpine-supervisord:LATEST-$CI_COMMIT_REF_NAME
-    - /kaniko/warmer --image $GCP_REGISTRY_IMAGE/php-alpine-cli:LATEST-$CI_COMMIT_REF_NAME
+    - /kaniko/warmer --image $GCP_REGISTRY_IMAGE/php-alpine:LATEST-$CI_COMMIT_REF_NAME
     - /kaniko/warmer --image $GCP_REGISTRY_IMAGE/nginx:LATEST-$CI_COMMIT_REF_NAME
 
     - /kaniko/executor
@@ -91,9 +88,9 @@ build_and_push:
       --build-arg NGINX_VERSION="$NGINX_VERSION"
       --build-arg ALPINE_VERSION="$ALPINE_VERSION"
       --build-arg REGISTRY_URL="$REGISTRY_URL"
-      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine-fpm/cache
-      --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm:$TAG
-      --destination $GCP_REGISTRY_IMAGE/php-alpine-fpm:LATEST-$CI_COMMIT_REF_NAME
+      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine/cache
+      --destination $GCP_REGISTRY_IMAGE/php-alpine:$TAG
+      --destination $GCP_REGISTRY_IMAGE/php-alpine:LATEST-$CI_COMMIT_REF_NAME
 
     - /kaniko/executor
       --context $CI_PROJECT_DIR
@@ -109,7 +106,7 @@ build_and_push:
       --build-arg NGINX_VERSION="$NGINX_VERSION"
       --build-arg ALPINE_VERSION="$ALPINE_VERSION"
       --build-arg REGISTRY_URL="$REGISTRY_URL"
-      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine-fpm/cache
+      --cache-repo $GCP_REGISTRY_IMAGE/php-alpine/cache
       --destination $GCP_REGISTRY_IMAGE/nginx:$TAG
       --destination $GCP_REGISTRY_IMAGE/nginx:LATEST-$CI_COMMIT_REF_NAME
 

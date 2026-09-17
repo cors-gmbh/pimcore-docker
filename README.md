@@ -194,9 +194,10 @@ Manifest lives. For now, we only have this setup for Gitlab.
 This is the dockerfile we use in the Projects. It is a multi-stage build that builds several images for several
 purposes:
 
-- ***PHP***: One image with the application code. It runs as FPM server, migration/pre-hook job (`bin/console`),
-  queue worker (`supervisord`) or with the blackfire probe (`BLACKFIRE_ENABLED=1`), depending on the Kubernetes
-  manifest.
+- ***PHP***: One image with the application code, pushed as `php-alpine`. It runs as FPM server, migration/pre-hook
+  job (`bin/console`), queue worker (`consume-loop`) or with the blackfire probe (`BLACKFIRE_ENABLED=1`), depending
+  on the Kubernetes manifest. (9.x projects pushed four images: `php-alpine-fpm`, `-cli`, `-supervisord`,
+  `-fpm-blackfire`.)
 - ***NGINX***: Frontend HTTP Server
 - ***Node***: To build webpack encore and copy it to the PHP Containers and NGINX.
 
