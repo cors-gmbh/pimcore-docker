@@ -187,16 +187,18 @@ Start them with `docker compose --profile workers up`.
 
 ### Dockerfile
 
-For Production and Stage Build, we then have our gitlab-ci pipeline [.project-gitlab-ci.yml](.project-gitlab-ci.yml)
-which builds our project, pushes it to Google Artifact Registry and we update a separate project where the Kubernetes
-Manifest lives. For now, we only have this setup for Gitlab.
+For Production and Stage builds we use the reusable GitHub workflows in
+[cors-gmbh/shared-workflows](https://github.com/cors-gmbh/shared-workflows) (`project-ci` / `containerize`): they build
+the project image, push it to Google Artifact Registry and bump the image tag in a separate manifest repo that holds
+the Helm values for [pimcore-chart](https://github.com/cors-gmbh/pimcore-chart).
 
 This is the dockerfile we use in the Projects. It is a multi-stage build that builds several images for several
 purposes:
 
-- ***PHP***: One image with the application code. It runs as FPM server, migration/pre-hook job (`bin/console`),
-  queue worker (`supervisord`) or with the blackfire probe (`BLACKFIRE_ENABLED=1`), depending on the Kubernetes
-  manifest.
+- ***PHP***: One image with the application code, pushed as `php-alpine`. It runs as FPM server, migration/pre-hook
+  job (`bin/console`), queue worker (`consume-loop`) or with the blackfire probe (`BLACKFIRE_ENABLED=1`), depending
+  on the Kubernetes manifest. (9.x projects pushed four images: `php-alpine-fpm`, `-cli`, `-supervisord`,
+  `-fpm-blackfire`.)
 - ***NGINX***: Frontend HTTP Server
 - ***Node***: To build webpack encore and copy it to the PHP Containers and NGINX.
 
