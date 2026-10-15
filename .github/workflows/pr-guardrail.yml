@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   guardrail:
-    uses: cors-gmbh/shared-workflows/.github/workflows/pr-guardrail.yml@v1
+    uses: cors-gmbh/shared-workflows/.github/workflows/pr-guardrail.yml@main
     with:
       # Enforce-Modus: Verstöße setzen den PR auf Draft und der Check schlägt
       # fehl. Für reinen Hinweismodus (nur Kommentar) auf `false` stellen.
@@ -48,5 +48,5 @@ jobs:
   # Zum Deaktivieren auskommentieren.
   pr-to-project:
     if: github.event_name == 'pull_request_target'
-    uses: cors-gmbh/shared-workflows/.github/workflows/pr-to-project.yml@v1
+    uses: cors-gmbh/shared-workflows/.github/workflows/pr-to-project.yml@main
     secrets: inherit
