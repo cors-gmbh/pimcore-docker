@@ -83,6 +83,16 @@ jobs:
           echo "dockerfile=$DOCKERFILE" >> "$GITHUB_OUTPUT"
           echo "from_image=$FROM_IMAGE" >> "$GITHUB_OUTPUT"
 
+          # docker-library no longer publishes these PHP/Alpine combinations, so the official
+          # images stay on PHP versions without the CVE-2026-109618/-109619 fix. Build from our
+          # own php-backport images instead (built by php-backport.yml on branch 7.0).
+          BACKPORT_COMBOS="8.2/3.21 8.2/3.22 8.3/3.21 8.3/3.22 8.4/3.21 8.4/3.22 8.5/3.21 8.5/3.22"
+          PHP_BASE_IMAGE=php
+          if [ "${{ inputs.component }}" = "php" ] && [[ " $BACKPORT_COMBOS " == *" ${{ matrix.php_version }}/${{ matrix.alpine }} "* ]]; then
+            PHP_BASE_IMAGE=$REGISTRY/php-backport
+          fi
+          echo "php_base_image=$PHP_BASE_IMAGE" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         id: build
         continue-on-error: true
@@ -100,6 +110,7 @@ jobs:
             ALPINE_VERSION=${{ matrix.alpine || '' }}
             NGINX_VERSION=${{ matrix.nginx_version || '' }}
             FROM=${{ steps.image.outputs.from_image }}
+            PHP_BASE_IMAGE=${{ steps.image.outputs.php_base_image }}
 
       # ghcr.io fails intermittently with "unknown blob" when parallel jobs
       # push shared layers; one retry after the race has settled fixes it
@@ -124,6 +135,7 @@ jobs:
             ALPINE_VERSION=${{ matrix.alpine || '' }}
             NGINX_VERSION=${{ matrix.nginx_version || '' }}
             FROM=${{ steps.image.outputs.from_image }}
+            PHP_BASE_IMAGE=${{ steps.image.outputs.php_base_image }}
 
       - name: Generate Artifact Attestation
         uses: actions/attest-build-provenance@v2
