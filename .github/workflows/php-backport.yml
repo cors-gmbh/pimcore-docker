@@ -1,0 +1,106 @@
+name: PHP 8.1 Backport Build
+
+# PHP 8.1 is EOL and gets no release or official Docker image for CVE-2026-109618 /
+# CVE-2026-109619. This builds ghcr.io/<repo>/php-backport:8.1-{fpm,cli}-alpine3.21 from
+# php-backport/ (official 8.1.34 Dockerfile + the PHP security team's backport patch).
+# docker-build.yml uses it as base for PHP 8.1 on Alpine 3.21.
+#
+# Pull requests only build and smoke test; pushes to 7.0 and manual runs also publish.
+
+on:
+  push:
+    branches:
+      - "7.0"
+    paths:
+      - "php-backport/**"
+      - ".github/workflows/php-backport.yml"
+  pull_request:
+    paths:
+      - "php-backport/**"
+      - ".github/workflows/php-backport.yml"
+  workflow_dispatch: ~
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}/php-backport
+  ALPINE_VERSION: "3.21"
+  # immutable tag in addition to the moving 8.1-<type>-alpine3.21
+  VERSION_TAG: "8.1.34-cve-2026-109618"
+
+jobs:
+  build:
+    name: Build php-backport 8.1/${{ matrix.php_type }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ amd, arm ]
+        php_type: [ fpm, cli ]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            --tag php-backport:${{ matrix.php_type }} \
+            php-backport/8.1/alpine${{ env.ALPINE_VERSION }}/${{ matrix.php_type }}
+
+      - name: Smoke Test
+        run: |
+          IMG=php-backport:${{ matrix.php_type }}
+          docker run --rm $IMG php -v
+          docker run --rm $IMG php -m
+          # the marker is only set by our Dockerfile, so this fails for an unpatched base
+          docker run --rm $IMG sh -c 'echo "PHP_SECURITY_BACKPORT=$PHP_SECURITY_BACKPORT"; test -n "$PHP_SECURITY_BACKPORT"'
+          if [ "${{ matrix.php_type }}" == "fpm" ]; then
+            docker run --rm $IMG php-fpm -t
+          fi
+
+      - name: Push Docker Image
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          IMAGE_REF=${{ env.IMAGE }}:8.1-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }}-${{ matrix.arch }}
+          docker tag php-backport:${{ matrix.php_type }} "$IMAGE_REF"
+
+          for attempt in 1 2 3 4 5; do
+            if docker push "$IMAGE_REF"; then
+              exit 0
+            fi
+
+            sleep_seconds=$((attempt * 15))
+            echo "Docker push failed, retrying in ${sleep_seconds}s (attempt ${attempt}/5)"
+            sleep "$sleep_seconds"
+          done
+
+          docker push "$IMAGE_REF"
+
+  manifest:
+    name: Manifest php-backport 8.1/${{ matrix.php_type }}
+    needs: build
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        php_type: [ fpm, cli ]
+    steps:
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Create and Push Manifests
+        run: |
+          SOURCE=${{ env.IMAGE }}:8.1-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }}
+
+          for TAG in \
+            8.1-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }} \
+            ${{ env.VERSION_TAG }}-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }}; do
+            docker manifest rm ${{ env.IMAGE }}:$TAG 2>/dev/null || true
+            docker manifest create ${{ env.IMAGE }}:$TAG \
+              --amend $SOURCE-amd \
+              --amend $SOURCE-arm
+            docker manifest push ${{ env.IMAGE }}:$TAG
+          done
