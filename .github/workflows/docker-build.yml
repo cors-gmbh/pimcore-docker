@@ -90,10 +90,18 @@ jobs:
 
           REGISTRY=ghcr.io/${{ github.repository }}
 
+          # PHP 8.1 is EOL: on Alpine 3.21 build from our own 8.1.34 image with the
+          # CVE-2026-109618/-109619 backport (php-backport.yml) instead of the official one
+          PHP_BASE_IMAGE=php
+          if [ "${{ inputs.component }}" == "php" ] && [ "${{ matrix.php_version }}" == "8.1" ] && [ "${{ matrix.alpine }}" == "3.21" ]; then
+            PHP_BASE_IMAGE=$REGISTRY/php-backport
+          fi
+
           docker build \
             -f $DOCKERFILE \
             --cache-from $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
             --tag $REGISTRY/$IMAGE_NAME:${{ env.IMAGE_TAG }} \
+            --build-arg PHP_BASE_IMAGE=$PHP_BASE_IMAGE \
             --build-arg PHP_VERSION=${{ matrix.php_version || '' }} \
             $(if [ -n "${{ env.FROM_IMAGE }}" ]; then echo "--build-arg FROM=${{ env.FROM_IMAGE }}"; fi) \
             --build-arg PHP_TYPE=${{ matrix.php_type || '' }} \
