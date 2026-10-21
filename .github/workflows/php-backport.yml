@@ -1,9 +1,11 @@
-name: PHP 8.1 Backport Build
+name: PHP Backport Build
 
-# PHP 8.1 is EOL and gets no release or official Docker image for CVE-2026-109618 /
-# CVE-2026-109619. This builds ghcr.io/<repo>/php-backport:8.1-{fpm,cli}-alpine3.21 from
-# php-backport/ (official 8.1.34 Dockerfile + the PHP security team's backport patch).
-# docker-build.yml uses it as base for PHP 8.1 on Alpine 3.21.
+# Builds the PHP base images docker-library no longer publishes for the Alpine versions of
+# our older branches, from php-backport/<php>/alpine<alpine>/<type>/ (see php-backport/README.md):
+# - 8.1.34 + the PHP security team's backport for CVE-2026-109618 / CVE-2026-109619 (8.1 is EOL)
+# - 8.2.35 / 8.3.36 / 8.4.27, the fixed releases, on Alpine 3.21 and 3.22
+# Published as ghcr.io/<repo>/php-backport:<php>-<type>-alpine<alpine>; docker-build.yml uses
+# them as base for exactly these combinations (keep BACKPORT_COMBOS there in sync).
 #
 # Pull requests only build and smoke test; pushes to 7.0 and manual runs also publish.
 
@@ -26,36 +28,48 @@ permissions:
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}/php-backport
-  ALPINE_VERSION: "3.21"
-  # immutable tag in addition to the moving 8.1-<type>-alpine3.21
-  VERSION_TAG: "8.1.34-cve-2026-109618"
 
 jobs:
   build:
-    name: Build php-backport 8.1/${{ matrix.php_type }} ${{ matrix.arch }}
+    name: Build php-backport ${{ matrix.combo }}/${{ matrix.php_type }} ${{ matrix.arch }}
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       fail-fast: false
+      max-parallel: 8
       matrix:
-        arch: [ amd, arm ]
+        # <php>/<alpine>
+        combo: [ "8.1/3.21", "8.2/3.21", "8.3/3.21", "8.3/3.22", "8.4/3.21", "8.4/3.22" ]
         php_type: [ fpm, cli ]
+        arch: [ amd, arm ]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build Docker Image
+      - name: Resolve Build Directory
         run: |
-          docker build \
-            --tag php-backport:${{ matrix.php_type }} \
-            php-backport/8.1/alpine${{ env.ALPINE_VERSION }}/${{ matrix.php_type }}
+          COMBO="${{ matrix.combo }}"
+          PHP_VERSION=${COMBO%/*}
+          ALPINE_VERSION=${COMBO#*/}
+          DIR=php-backport/$PHP_VERSION/alpine$ALPINE_VERSION/${{ matrix.php_type }}
+          echo "PHP_VERSION=$PHP_VERSION" >> $GITHUB_ENV
+          echo "ALPINE_VERSION=$ALPINE_VERSION" >> $GITHUB_ENV
+          echo "DIR=$DIR" >> $GITHUB_ENV
+          echo "PHP_FULL_VERSION=$(sed -n 's/^ENV PHP_VERSION //p' $DIR/Dockerfile)" >> $GITHUB_ENV
+
+      - name: Build Docker Image
+        run: docker build --tag php-backport:test "$DIR"
 
       - name: Smoke Test
         run: |
-          IMG=php-backport:${{ matrix.php_type }}
+          IMG=php-backport:test
           docker run --rm $IMG php -v
           docker run --rm $IMG php -m
-          # the marker is only set by our Dockerfile, so this fails for an unpatched base
-          docker run --rm $IMG sh -c 'echo "PHP_SECURITY_BACKPORT=$PHP_SECURITY_BACKPORT"; test -n "$PHP_SECURITY_BACKPORT"'
+          test "$(docker run --rm $IMG php -r 'echo PHP_VERSION;')" == "$PHP_FULL_VERSION"
+          docker run --rm $IMG sh -c "grep -q '^$ALPINE_VERSION\.' /etc/alpine-release"
+          # 8.1 only: the marker is set by our Dockerfile, so this fails for an unpatched base
+          if grep -q 'PHP_SECURITY_BACKPORT' "$DIR/Dockerfile"; then
+            docker run --rm $IMG sh -c 'echo "PHP_SECURITY_BACKPORT=$PHP_SECURITY_BACKPORT"; test -n "$PHP_SECURITY_BACKPORT"'
+          fi
           if [ "${{ matrix.php_type }}" == "fpm" ]; then
             docker run --rm $IMG php-fpm -t
           fi
@@ -64,8 +78,8 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          IMAGE_REF=${{ env.IMAGE }}:8.1-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }}-${{ matrix.arch }}
-          docker tag php-backport:${{ matrix.php_type }} "$IMAGE_REF"
+          IMAGE_REF=${{ env.IMAGE }}:$PHP_VERSION-${{ matrix.php_type }}-alpine$ALPINE_VERSION-${{ matrix.arch }}
+          docker tag php-backport:test "$IMAGE_REF"
 
           for attempt in 1 2 3 4 5; do
             if docker push "$IMAGE_REF"; then
@@ -80,24 +94,36 @@ jobs:
           docker push "$IMAGE_REF"
 
   manifest:
-    name: Manifest php-backport 8.1/${{ matrix.php_type }}
+    name: Manifest php-backport ${{ matrix.combo }}/${{ matrix.php_type }}
     needs: build
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-22.04
     strategy:
       matrix:
+        combo: [ "8.1/3.21", "8.2/3.21", "8.3/3.21", "8.3/3.22", "8.4/3.21", "8.4/3.22" ]
         php_type: [ fpm, cli ]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Create and Push Manifests
         run: |
-          SOURCE=${{ env.IMAGE }}:8.1-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }}
+          COMBO="${{ matrix.combo }}"
+          PHP_VERSION=${COMBO%/*}
+          ALPINE_VERSION=${COMBO#*/}
+          DIR=php-backport/$PHP_VERSION/alpine$ALPINE_VERSION/${{ matrix.php_type }}
+          FULL=$(sed -n 's/^ENV PHP_VERSION //p' $DIR/Dockerfile)
+          # immutable tag; images with the 8.1 backport carry the CVE in it
+          if grep -q 'PHP_SECURITY_BACKPORT' "$DIR/Dockerfile"; then FULL="$FULL-cve-2026-109618"; fi
+
+          SOURCE=${{ env.IMAGE }}:$PHP_VERSION-${{ matrix.php_type }}-alpine$ALPINE_VERSION
 
           for TAG in \
-            8.1-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }} \
-            ${{ env.VERSION_TAG }}-${{ matrix.php_type }}-alpine${{ env.ALPINE_VERSION }}; do
+            $PHP_VERSION-${{ matrix.php_type }}-alpine$ALPINE_VERSION \
+            $FULL-${{ matrix.php_type }}-alpine$ALPINE_VERSION; do
             docker manifest rm ${{ env.IMAGE }}:$TAG 2>/dev/null || true
             docker manifest create ${{ env.IMAGE }}:$TAG \
               --amend $SOURCE-amd \
