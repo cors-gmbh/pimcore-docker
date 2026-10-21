@@ -1,8 +1,11 @@
 ARG PHP_VERSION="8.3"
 ARG PHP_TYPE="fpm"
 ARG ALPINE_VERSION=3.20
+# Official "php" images by default. CI overrides this with our own php-backport images for
+# the PHP/Alpine combinations docker-library no longer updates (see php-backport/ on 7.0).
+ARG PHP_BASE_IMAGE=php
 
-FROM php:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} AS cors_php
+FROM ${PHP_BASE_IMAGE}:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} AS cors_php
 
 ARG PHP_VERSION
 ARG PHP_TYPE
