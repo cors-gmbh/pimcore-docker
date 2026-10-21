@@ -23,6 +23,14 @@ RUN set -eux; \
       libpng-dev libjpeg libxpm libjpeg-turbo-dev imap-dev krb5-dev openssl-dev libavif libavif-dev libheif libheif-dev zopfli \
       musl-locales icu-data-full lcms2-dev ghostscript libreoffice imagemagick imagemagick-dev git \
       rabbitmq-c-dev; \
+    # PEAR older than 1.10.18 (the official images on Alpine 3.21 ship 1.10.16) cannot read the
+    # chunked + gzip responses pecl.php.net sends since it moved behind a CDN, so every
+    # "pecl install" fails with "No releases available". Upgrade it from the release tarball.
+    curl -fsSL -o /tmp/PEAR.tgz https://pear.php.net/get/PEAR-1.10.18.tgz; \
+    echo "276db000b4e0a9388c7f5168522174bae4144c8c411a71d480b82ec25ee3bc8b  /tmp/PEAR.tgz" | sha256sum -c -; \
+    pear install --force --nodeps /tmp/PEAR.tgz; \
+    rm /tmp/PEAR.tgz; \
+    pecl channel-update pecl.php.net; \
     if [ "$(php -r 'echo PHP_MAJOR_VERSION;')" -ge 8 ] && [ "$(php -r 'echo PHP_MINOR_VERSION;')" -ge 5 ]; then \
       cd /tmp && git clone https://github.com/Imagick/imagick.git && cd imagick && \
       phpize && ./configure && make && \
