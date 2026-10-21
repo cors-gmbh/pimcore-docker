@@ -5,7 +5,7 @@ name: PHP Backport Build
 # - 8.1.34 + the PHP security team's backport for CVE-2026-109618 / CVE-2026-109619 (8.1 is EOL)
 # - 8.2.35 / 8.3.36 / 8.4.27 / 8.5.12, the fixed releases, on Alpine 3.21 and 3.22
 # Published as ghcr.io/<repo>/php-backport:<php>-<type>-alpine<alpine>; docker-build.yml uses
-# them as base for exactly these combinations (keep BACKPORT_COMBOS there in sync).
+# them as base (BACKPORT_COMBOS in docker-build.yml of 7.0 and 8.0).
 #
 # Pull requests only build and smoke test; pushes to 7.0 and manual runs also publish.
 
