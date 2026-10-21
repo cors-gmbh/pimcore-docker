@@ -8,11 +8,12 @@ are frozen on vulnerable PHP versions. This directory rebuilds them ourselves.
 | Directory | PHP | Source |
 |---|---|---|
 | `8.1/alpine3.21/{fpm,cli}` | 8.1.34 + backport | last official docker-library 8.1.34 Dockerfiles ([`5c037abaf9`](https://github.com/docker-library/php/tree/5c037abaf9/8.1/alpine3.21)) plus the PHP security team's backport patch |
-| `8.2/alpine3.21/{fpm,cli}` | 8.2.35 | official `8.2/alpine3.23` Dockerfiles of [`f6048b5f`](https://github.com/docker-library/php/tree/f6048b5f6e3c2202ee082665a4ccc0d90de291a3), `FROM alpine:3.21` |
+| `8.2/alpine3.2{1,2}/{fpm,cli}` | 8.2.35 | official `8.2/alpine3.23` Dockerfiles of [`f6048b5f`](https://github.com/docker-library/php/tree/f6048b5f6e3c2202ee082665a4ccc0d90de291a3), `FROM alpine:3.21` / `3.22` |
 | `8.3/alpine3.2{1,2}/{fpm,cli}` | 8.3.36 | official `8.3/alpine3.23` Dockerfiles of `f6048b5f`, `FROM alpine:3.21` / `3.22` |
 | `8.4/alpine3.2{1,2}/{fpm,cli}` | 8.4.27 | official `8.4/alpine3.23` Dockerfiles of `f6048b5f`, `FROM alpine:3.21` / `3.22` |
+| `8.5/alpine3.2{1,2}/{fpm,cli}` | 8.5.12 | official `8.5/alpine3.23` Dockerfiles of `f6048b5f`, `FROM alpine:3.21` / `3.22` |
 
-For 8.2 to 8.4 the `FROM` line is the **only** change. docker-library generates the Alpine
+For 8.2 to 8.5 the `FROM` line is the **only** change. docker-library generates the Alpine
 variants of a release from one template, and the official 3.23 and 3.24 Dockerfiles of
 `f6048b5f` differ in nothing but that line.
 
