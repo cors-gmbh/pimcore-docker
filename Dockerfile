@@ -1,8 +1,8 @@
 ARG PHP_VERSION="8.3"
 ARG PHP_TYPE="fpm"
 ARG ALPINE_VERSION=3.20
-# Official "php" images by default. CI overrides this for PHP 8.1 on Alpine 3.21 with our
-# own build that carries the CVE-2026-109618/-109619 backport (see php-backport/).
+# Official "php" images by default. CI overrides this with our own php-backport images for
+# the PHP/Alpine combinations docker-library no longer updates (see php-backport/).
 ARG PHP_BASE_IMAGE=php
 
 FROM ${PHP_BASE_IMAGE}:${PHP_VERSION}-${PHP_TYPE}-alpine${ALPINE_VERSION} AS cors_php
