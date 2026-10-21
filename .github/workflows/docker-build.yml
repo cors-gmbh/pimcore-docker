@@ -30,7 +30,8 @@ jobs:
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJSON(inputs.matrix) }}
-      max-parallel: 4
+      # was 4 to avoid ghcr "unknown blob" races; the push retry below handles those now
+      max-parallel: 12
 
     steps:
       - name: Checkout code
@@ -153,7 +154,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix: ${{ fromJSON(inputs.matrix_manifest) }}
-      max-parallel: 2
+      max-parallel: 6
 
     steps:
       - name: Login to GitHub Container Registry
