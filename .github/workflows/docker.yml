@@ -15,7 +15,7 @@ env:
   PHP_VERSIONS: '8.1 8.2 8.3 8.4'
   PHP_TYPES: 'fpm cli'
   ALPINE_VERSIONS: '3.20 3.21 3.22'
-  NGINX_VERSIONS: '1.25 1.26 1.27 1.28'
+  NGINX_VERSIONS: '1.25 1.26 1.27 1.28 1.30'
   INCOMPATIBLE_MATRIX: >
     [
       { "php_version": "8.1", "alpine": "3.22" },

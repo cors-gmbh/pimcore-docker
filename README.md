@@ -39,7 +39,7 @@ We currently build the images for following Versions:
  - ***Alpine***: 3.20, 3.21, 3.22
  - ***PHP***: 8.2, 8.3, 8.4
  - ***Variants***: CLI, FPM, FPM-Debug, Supervisord, FPM-Blackfire
- - ***Nginx***: 1.25, 1.26, 1.27, 1.28
+ - ***Nginx***: 1.25, 1.26, 1.27, 1.28, 1.30
 
 ## Available Images
 
@@ -55,7 +55,7 @@ Images are named like:
 - ***FPM-Debug***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-debug:8.2-alpine3.21-7.0-LATEST
 - ***Supervisord***: ghcr.io/cors-gmbh/pimcore-docker/php-supervisord:8.2-alpine3.21-7.0-LATEST
 - ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.2-alpine3.21-7.0-LATEST
-- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.26-7.0-LATEST
+- ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.30-7.0-LATEST
 
 ### SBOM
 
