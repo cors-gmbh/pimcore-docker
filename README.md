@@ -57,6 +57,26 @@ Images are named like:
 - ***Blackfire***: ghcr.io/cors-gmbh/pimcore-docker/php-fpm-blackfire:8.4-alpine3.23-8.0-LATEST
 - ***Nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.29-8.0-LATEST
 
+### SBOM
+
+PHP is compiled from source and the extensions come from PECL, so scanners that read the apk database (Trivy, the
+Trivy Operator) don't see them. Every PHP image therefore contains a CycloneDX SBOM at
+`/usr/local/share/sbom/php.cdx.json`, written at build time by `generate-sbom` from what is actually installed:
+`php` itself, the PECL extensions (`peclimagick`, `peclredis`, `peclapcu`, `peclamqp`, `peclxdebug` in the debug
+image, `blackfire-php` in the blackfire image), PEAR and its libraries, and `composer` with the libraries bundled in
+its phar.
+
+Names follow Bitnami's conventions (`pkg:bitnami/php@8.4.27`), so Trivy matches them against the Bitnami
+vulnerability database; the PEAR and composer libraries are `pkg:composer` and matched against the GitHub advisories.
+CI fails if Trivy does not detect the SBOM with the image's PHP version (`.github/scripts/check-sbom.sh`).
+
+PHP rebuilt with a security backport (`php-backport/`, env `PHP_SECURITY_BACKPORT`) keeps the release version.
+The patched CVEs are recorded in the purl, e.g. `pkg:bitnami/php@8.1.34?backport=CVE-2026-109618%2CCVE-2026-109619`,
+and as CycloneDX `pedigree.patches`. Trivy still reports them (it matches by version), but passes the purl through,
+so a SecObserve rule can mark exactly these CVEs as not affected.
+
+Project images that add PHP extensions run `RUN generate-sbom` again (as root) after installing them.
+
 ## Getting Started
 
 We use this image as our base layer for our Projects. We then use a custom Dockerfile and docker-compose.yaml per
