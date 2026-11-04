@@ -65,6 +65,7 @@ COPY php/docker-wait-pimcore.sh /usr/local/bin/wait_pimcore
 COPY php/docker-healthcheck.sh /usr/local/bin/health
 COPY php/docker-readiness.sh /usr/local/bin/readiness
 COPY php/docker-status.sh /usr/local/bin/status
+COPY php/generate-sbom.php /usr/local/bin/generate-sbom
 
 COPY fpm/php.ini /usr/local/etc/php/php.ini
 
@@ -76,6 +77,11 @@ RUN chmod +x /usr/local/bin/wait_db
 RUN chmod +x /usr/local/bin/wait_pimcore
 RUN chmod +x /usr/local/bin/health
 RUN chmod +x /usr/local/bin/status
+RUN chmod +x /usr/local/bin/generate-sbom
+
+# SBOM of what is installed outside apk (PHP, PECL extensions, PEAR, composer), so that Trivy
+# can detect and match it. Every image that adds PHP extensions on top runs generate-sbom again.
+RUN generate-sbom
 
 FROM cors_php AS cors_php_cli
 
