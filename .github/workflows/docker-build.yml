@@ -30,6 +30,9 @@ jobs:
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJSON(inputs.matrix) }}
+      # one failed combination must not cancel the others; the manifest job only
+      # combines images that were built in this run
+      fail-fast: false
       # was 4 to avoid ghcr "unknown blob" races; the push retry below handles those now
       max-parallel: 12
 
@@ -94,6 +97,24 @@ jobs:
           fi
           echo "php_base_image=$PHP_BASE_IMAGE" >> "$GITHUB_OUTPUT"
 
+      # The debug/blackfire/supervisord builds also run when single php builds failed. Build
+      # them only on a base image whose job succeeded in this run, not on an older one with the
+      # same tag (the -LATEST tags).
+      - name: Check base image
+        if: steps.image.outputs.from_image != ''
+        env:
+          FROM_IMAGE: ${{ steps.image.outputs.from_image }}
+        run: |
+          run_id=$(docker buildx imagetools inspect "$FROM_IMAGE" --format '{{json .Image.Config.Labels}}' \
+            | jq -r '.["gmbh.cors.pimcore-docker.run-id"] // empty' || true)
+          if [ "$run_id" != "$GITHUB_RUN_ID" ]; then
+            echo "::error::$FROM_IMAGE was not built in this run (its build failed)"
+            exit 1
+          fi
+
+      # Pushed by digest only. The tag is set by the last step, so it only ever points to an
+      # image whose job succeeded, SBOM check and attestation included; the run-id label tells
+      # an image of this run from an older one with the same tag (the -LATEST tags).
       - name: Build and push Docker image
         id: build
         continue-on-error: true
@@ -101,10 +122,10 @@ jobs:
         with:
           context: .
           file: ${{ steps.image.outputs.dockerfile }}
-          push: true
-          tags: ${{ steps.image.outputs.image_ref }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=registry,ref=${{ steps.image.outputs.image_ref }}
           cache-to: type=inline
+          labels: gmbh.cors.pimcore-docker.run-id=${{ github.run_id }}
           build-args: |
             PHP_VERSION=${{ matrix.php_version || '' }}
             PHP_TYPE=${{ matrix.php_type || '' }}
@@ -126,10 +147,10 @@ jobs:
         with:
           context: .
           file: ${{ steps.image.outputs.dockerfile }}
-          push: true
-          tags: ${{ steps.image.outputs.image_ref }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=registry,ref=${{ steps.image.outputs.image_ref }}
           cache-to: type=inline
+          labels: gmbh.cors.pimcore-docker.run-id=${{ github.run_id }}
           build-args: |
             PHP_VERSION=${{ matrix.php_version || '' }}
             PHP_TYPE=${{ matrix.php_type || '' }}
@@ -138,12 +159,54 @@ jobs:
             FROM=${{ steps.image.outputs.from_image }}
             PHP_BASE_IMAGE=${{ steps.image.outputs.php_base_image }}
 
+      # Trivy sees PHP, the PECL extensions and composer only through the SBOM inside the image
+      # (php/generate-sbom.php) and skips an invalid one silently. Fails before the attestation
+      # and the tag if it does not detect the SBOM with the image's PHP version.
+      - name: Check SBOM
+        if: inputs.component != 'nginx'
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}@${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
+          TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy-cache"
+          export TRIVY="docker run --rm -v $HOME/.docker:/root/.docker:ro -v $RUNNER_TEMP/trivy-cache:/root/.cache/trivy $TRIVY_IMAGE"
+          .github/scripts/check-sbom.sh "$IMAGE"
+
+      # requesting the OIDC token fails now and then ("Failed to get ID token"); one retry
       - name: Generate Artifact Attestation
+        id: attest
+        continue-on-error: true
         uses: actions/attest-build-provenance@v2
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}
           subject-digest: ${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
           push-to-registry: true
+
+      - name: Wait before attestation retry
+        if: steps.attest.outcome == 'failure'
+        run: sleep 30
+
+      - name: Generate Artifact Attestation (retry)
+        if: steps.attest.outcome == 'failure'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}
+          subject-digest: ${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Tag image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}@${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
+          IMAGE_REF: ${{ steps.image.outputs.image_ref }}
+        run: |
+          for attempt in 1 2 3; do
+            if docker buildx imagetools create --tag "$IMAGE_REF" "$IMAGE"; then
+              exit 0
+            fi
+            echo "Tagging failed, retrying in $((attempt * 15))s (attempt ${attempt}/3)"
+            sleep $((attempt * 15))
+          done
+          exit 1
 
   manifest:
     name: >
@@ -151,9 +214,12 @@ jobs:
       ${{ inputs.component }}
       ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.php_type && '/' }}${{ matrix.php_type || '' }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
     needs: build
+    # also when single builds failed, for every combination whose images were built
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-22.04
     strategy:
       matrix: ${{ fromJSON(inputs.matrix_manifest) }}
+      fail-fast: false
       max-parallel: 6
 
     steps:
@@ -189,6 +255,18 @@ jobs:
           TARGET=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG
           AMD=$REGISTRY/amd-$IMAGE_NAME:$IMAGE_TAG
           ARM=$REGISTRY/arm-$IMAGE_NAME:$IMAGE_TAG
+
+          # only combine images whose build succeeded in this run, never one of an earlier run
+          # (the -LATEST tags); otherwise this job fails, and "Re-run failed jobs" creates the
+          # manifest once the missing build has succeeded
+          for image in "$AMD" "$ARM"; do
+            run_id=$(docker buildx imagetools inspect "$image" --format '{{json .Image.Config.Labels}}' \
+              | jq -r '.["gmbh.cors.pimcore-docker.run-id"] // empty' || true)
+            if [ "$run_id" != "$GITHUB_RUN_ID" ]; then
+              echo "::error::$image was not built in this run, $TARGET is not updated"
+              exit 1
+            fi
+          done
 
           for attempt in 1 2 3 4 5; do
             if docker buildx imagetools create \
