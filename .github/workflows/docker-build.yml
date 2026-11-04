@@ -31,6 +31,9 @@ jobs:
     runs-on: ${{ matrix.arch == 'amd' && 'ubuntu-22.04' || 'ubuntu-22.04-arm' }}
     strategy:
       matrix: ${{ fromJSON(inputs.matrix) }}
+      # one failed combination must not cancel the others; the manifest job only
+      # combines images that were built in this run
+      fail-fast: false
       max-parallel: 4
 
     steps:
@@ -49,7 +52,10 @@ jobs:
 
       # ghcr.io fails intermittently with "unknown blob" when parallel jobs
       # push shared layers; one retry after the race has settled fixes it
-
+      #
+      # Pushed by digest only. The tags are set by the last step, so they only ever point to
+      # images whose job succeeded, SBOM check and attestation included; the run-id label tells
+      # an image of this run from an older one with the same tag (the -LATEST tags).
       - name: Bake and push PHP images
         id: bake
         if: inputs.component == 'php'
@@ -61,7 +67,9 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           for attempt in 1 2; do
-            if docker buildx bake --push --metadata-file bake-metadata.json; then
+            if docker buildx bake --metadata-file bake-metadata.json \
+                --set "*.labels.gmbh.cors.pimcore-docker.run-id=$GITHUB_RUN_ID" \
+                --set "*.output=type=image,push-by-digest=true,name-canonical=true,push=true"; then
               break
             fi
             if [ "$attempt" = 2 ]; then exit 1; fi
@@ -69,11 +77,46 @@ jobs:
             sleep 30
           done
 
-          echo "digest_pimcore=$(jq -r '.["pimcore"]["containerimage.digest"]' bake-metadata.json)" >> "$GITHUB_OUTPUT"
-          echo "digest_pimcore_slim=$(jq -r '.["pimcore-slim"]["containerimage.digest"]' bake-metadata.json)" >> "$GITHUB_OUTPUT"
+          {
+            echo "digest_pimcore=$(jq -r '.["pimcore"]["containerimage.digest"]' bake-metadata.json)"
+            echo "digest_pimcore_slim=$(jq -r '.["pimcore-slim"]["containerimage.digest"]' bake-metadata.json)"
+            echo "tag_pimcore=$(docker buildx bake --print pimcore | jq -r '.target["pimcore"].tags[0]')"
+            echo "tag_pimcore_slim=$(docker buildx bake --print pimcore-slim | jq -r '.target["pimcore-slim"].tags[0]')"
+          } >> "$GITHUB_OUTPUT"
 
-      - name: Attest pimcore
+      # Trivy sees PHP, the PECL extensions and composer only through the SBOM inside the image
+      # (php/generate-sbom.php) and skips an invalid one silently. Fails before the attestations
+      # and the tags if it does not detect the SBOM with the image's PHP version.
+      - name: Check SBOM
         if: inputs.component == 'php'
+        env:
+          REGISTRY: ghcr.io/${{ github.repository }}
+          ARCH_PREFIX: ${{ matrix.arch }}-
+          TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy-cache"
+          export TRIVY="docker run --rm -v $HOME/.docker:/root/.docker:ro -v $RUNNER_TEMP/trivy-cache:/root/.cache/trivy $TRIVY_IMAGE"
+          .github/scripts/check-sbom.sh \
+            "$REGISTRY/${ARCH_PREFIX}pimcore-slim@${{ steps.bake.outputs.digest_pimcore_slim }}" \
+            "$REGISTRY/${ARCH_PREFIX}pimcore@${{ steps.bake.outputs.digest_pimcore }}"
+
+      # requesting the OIDC token fails now and then ("Failed to get ID token"); one retry
+      - name: Attest pimcore
+        id: attest-pimcore
+        if: inputs.component == 'php'
+        continue-on-error: true
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-pimcore
+          subject-digest: ${{ steps.bake.outputs.digest_pimcore }}
+          push-to-registry: true
+
+      - name: Wait before attest pimcore retry
+        if: inputs.component == 'php' && steps.attest-pimcore.outcome == 'failure'
+        run: sleep 30
+
+      - name: Attest pimcore (retry)
+        if: inputs.component == 'php' && steps.attest-pimcore.outcome == 'failure'
         uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-pimcore
@@ -81,12 +124,45 @@ jobs:
           push-to-registry: true
 
       - name: Attest pimcore-slim
+        id: attest-pimcore-slim
         if: inputs.component == 'php'
+        continue-on-error: true
         uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-pimcore-slim
           subject-digest: ${{ steps.bake.outputs.digest_pimcore_slim }}
           push-to-registry: true
+
+      - name: Wait before attest pimcore-slim retry
+        if: inputs.component == 'php' && steps.attest-pimcore-slim.outcome == 'failure'
+        run: sleep 30
+
+      - name: Attest pimcore-slim (retry)
+        if: inputs.component == 'php' && steps.attest-pimcore-slim.outcome == 'failure'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ matrix.arch }}-pimcore-slim
+          subject-digest: ${{ steps.bake.outputs.digest_pimcore_slim }}
+          push-to-registry: true
+
+      - name: Tag PHP images
+        if: inputs.component == 'php'
+        env:
+          REGISTRY: ghcr.io/${{ github.repository }}
+          ARCH_PREFIX: ${{ matrix.arch }}-
+        run: |
+          tag() {
+            for attempt in 1 2 3; do
+              if docker buildx imagetools create --tag "$1" "$2"; then
+                return 0
+              fi
+              echo "Tagging failed, retrying in $((attempt * 15))s (attempt ${attempt}/3)"
+              sleep $((attempt * 15))
+            done
+            return 1
+          }
+          tag "${{ steps.bake.outputs.tag_pimcore }}" "$REGISTRY/${ARCH_PREFIX}pimcore@${{ steps.bake.outputs.digest_pimcore }}"
+          tag "${{ steps.bake.outputs.tag_pimcore_slim }}" "$REGISTRY/${ARCH_PREFIX}pimcore-slim@${{ steps.bake.outputs.digest_pimcore_slim }}"
 
       - name: Set nginx image metadata
         id: image
@@ -104,10 +180,10 @@ jobs:
         with:
           context: .
           file: Dockerfile-nginx
-          push: true
-          tags: ${{ steps.image.outputs.image_ref }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=registry,ref=${{ steps.image.outputs.image_ref }}
           cache-to: type=inline
+          labels: gmbh.cors.pimcore-docker.run-id=${{ github.run_id }}
           build-args: |
             NGINX_VERSION=${{ matrix.nginx_version }}
 
@@ -122,20 +198,49 @@ jobs:
         with:
           context: .
           file: Dockerfile-nginx
-          push: true
-          tags: ${{ steps.image.outputs.image_ref }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=registry,ref=${{ steps.image.outputs.image_ref }}
           cache-to: type=inline
+          labels: gmbh.cors.pimcore-docker.run-id=${{ github.run_id }}
           build-args: |
             NGINX_VERSION=${{ matrix.nginx_version }}
 
       - name: Attest nginx
+        id: attest-nginx
         if: inputs.component == 'nginx'
+        continue-on-error: true
         uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}
           subject-digest: ${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
           push-to-registry: true
+
+      - name: Wait before attest nginx retry
+        if: inputs.component == 'nginx' && steps.attest-nginx.outcome == 'failure'
+        run: sleep 30
+
+      - name: Attest nginx (retry)
+        if: inputs.component == 'nginx' && steps.attest-nginx.outcome == 'failure'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}
+          subject-digest: ${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Tag nginx image
+        if: inputs.component == 'nginx'
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}/${{ steps.image.outputs.image_name }}@${{ steps.build-retry.outputs.digest || steps.build.outputs.digest }}
+          IMAGE_REF: ${{ steps.image.outputs.image_ref }}
+        run: |
+          for attempt in 1 2 3; do
+            if docker buildx imagetools create --tag "$IMAGE_REF" "$IMAGE"; then
+              exit 0
+            fi
+            echo "Tagging failed, retrying in $((attempt * 15))s (attempt ${attempt}/3)"
+            sleep $((attempt * 15))
+          done
+          exit 1
 
   manifest:
     name: >
@@ -143,9 +248,12 @@ jobs:
       ${{ matrix.variant || 'nginx' }}
       ${{ matrix.php_version || matrix.nginx_version }}${{ matrix.alpine && '/' }}${{ matrix.alpine || '' }}
     needs: build
+    # also when single builds failed, for every combination whose images were built
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-22.04
     strategy:
       matrix: ${{ fromJSON(inputs.matrix_manifest) }}
+      fail-fast: false
       max-parallel: 2
 
     steps:
@@ -172,6 +280,18 @@ jobs:
           TARGET=$REGISTRY/$IMAGE_NAME:$IMAGE_TAG
           AMD=$REGISTRY/amd-$IMAGE_NAME:$IMAGE_TAG
           ARM=$REGISTRY/arm-$IMAGE_NAME:$IMAGE_TAG
+
+          # only combine images whose build succeeded in this run, never one of an earlier run
+          # (the -LATEST tags); otherwise this job fails, and "Re-run failed jobs" creates the
+          # manifest once the missing build has succeeded
+          for image in "$AMD" "$ARM"; do
+            run_id=$(docker buildx imagetools inspect "$image" --format '{{json .Image.Config.Labels}}' \
+              | jq -r '.["gmbh.cors.pimcore-docker.run-id"] // empty' || true)
+            if [ "$run_id" != "$GITHUB_RUN_ID" ]; then
+              echo "::error::$image was not built in this run, $TARGET is not updated"
+              exit 1
+            fi
+          done
 
           for attempt in 1 2 3 4 5; do
             if docker buildx imagetools create --tag "$TARGET" "$AMD" "$ARM"; then

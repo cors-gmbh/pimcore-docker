@@ -17,7 +17,7 @@ ARG ALPINE_VERSION=3.24
 #   2. PHP extensions, compiled with a temporary build-deps set that is removed
 #      again in the same layer; only the actually needed shared libraries stay.
 #      xdebug and the blackfire probe are installed but not enabled.
-#   3. composer, scripts, config                     -> cors_pimcore_base  (= pimcore-slim)
+#   3. composer, scripts, config, SBOM               -> cors_pimcore_base  (= pimcore-slim)
 #   4. LibreOffice                                   -> cors_pimcore       (= pimcore)
 
 FROM php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION} AS cors_pimcore_base
@@ -51,14 +51,8 @@ RUN set -eux; \
       freetype-dev libpng-dev libjpeg-turbo-dev libwebp-dev libxpm-dev \
       imagemagick-dev rabbitmq-c-dev; \
     \
-    if [ "$(php -r 'echo PHP_VERSION_ID;')" -ge 80500 ]; then \
-      # no PECL release supports PHP 8.5 yet, build from git
-      git clone --depth 1 https://github.com/Imagick/imagick.git /tmp/imagick; \
-      cd /tmp/imagick && phpize && ./configure && make -j"$(nproc)" && make install; \
-      cd / && rm -rf /tmp/imagick; \
-    else \
-      pecl install imagick; \
-    fi; \
+    # a PECL release, not a git build, so the SBOM has a real version (3.8.1 supports PHP 8.5)
+    pecl install imagick; \
     docker-php-ext-enable imagick; \
     \
     PHP_EXT="intl mysqli bcmath bz2 soap xsl pdo pdo_mysql exif zip sockets pcntl"; \
@@ -123,6 +117,7 @@ COPY --chmod=755 php/docker-healthcheck.sh   /usr/local/bin/health
 COPY --chmod=755 php/docker-readiness.sh     /usr/local/bin/readiness
 COPY --chmod=755 php/docker-status.sh        /usr/local/bin/status
 COPY --chmod=755 php/docker-consume-loop.sh  /usr/local/bin/consume-loop
+COPY --chmod=755 php/generate-sbom.php       /usr/local/bin/generate-sbom
 
 COPY fpm/php.ini              /usr/local/etc/php/php.ini
 COPY fpm/php-config.conf      /usr/local/etc/php-fpm.conf
@@ -135,11 +130,17 @@ COPY supervisord/supervisord.conf /etc/supervisor/supervisord.conf
 COPY supervisord/pimcore.conf     /etc/supervisor/conf.d/pimcore.conf
 COPY supervisord/coreshop._conf   /etc/supervisor/conf.d/coreshop._conf
 
+# SBOM of what is installed outside apk (PHP, PECL extensions, xdebug, blackfire, PEAR,
+# composer), so that Trivy can detect and match it. Images that add PHP extensions on top
+# run generate-sbom again.
+RUN generate-sbom
+
 ENTRYPOINT ["docker-entrypoint"]
 CMD ["php-fpm"]
 
 # 4. LibreOffice (document -> PDF conversion in Pimcore). Only the modules
 # needed for headless conversion; base/math/draw/gtk/postgres connector are left out.
+# They come from apk, so the SBOM of the base stage stays complete.
 FROM cors_pimcore_base AS cors_pimcore
 
 RUN set -eux; \
