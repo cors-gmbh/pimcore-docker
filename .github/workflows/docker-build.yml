@@ -67,9 +67,14 @@ jobs:
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           for attempt in 1 2; do
+            # push by digest: buildkit refuses tagged refs ("can't push tagged ref ... by digest"),
+            # so the tags are cleared and each target gets its repository as output name. The tags
+            # are set by the "Tag PHP images" step once the checks and attestations have passed.
             if docker buildx bake --metadata-file bake-metadata.json \
                 --set "*.labels.gmbh.cors.pimcore-docker.run-id=$GITHUB_RUN_ID" \
-                --set "*.output=type=image,push-by-digest=true,name-canonical=true,push=true"; then
+                --set "*.tags=" \
+                --set "pimcore.output=type=image,name=$REGISTRY/${ARCH_PREFIX}pimcore,push-by-digest=true,name-canonical=true,push=true" \
+                --set "pimcore-slim.output=type=image,name=$REGISTRY/${ARCH_PREFIX}pimcore-slim,push-by-digest=true,name-canonical=true,push=true"; then
               break
             fi
             if [ "$attempt" = 2 ]; then exit 1; fi
