@@ -34,14 +34,8 @@ RUN set -eux; \
     pear install --force --nodeps /tmp/PEAR.tgz; \
     rm /tmp/PEAR.tgz; \
     pecl channel-update pecl.php.net; \
-    if [ "$(php -r 'echo PHP_MAJOR_VERSION;')" -ge 8 ] && [ "$(php -r 'echo PHP_MINOR_VERSION;')" -ge 5 ]; then \
-      cd /tmp && git clone https://github.com/Imagick/imagick.git && cd imagick && \
-      phpize && ./configure && make && \
-      cp modules/imagick.so "$(php -r 'echo ini_get("extension_dir");')/imagick.so" && \
-      cd / && rm -rf /tmp/imagick; \
-    else \
-      pecl install imagick; \
-    fi; \
+    # a PECL release, not a git build, so the SBOM has a real version (3.8.1 supports PHP 8.5)
+    pecl install imagick; \
     docker-php-ext-enable imagick; \
     PHP_EXT="intl mysqli bcmath bz2 soap xsl pdo pdo_mysql exif zip sockets"; \
     php -r 'exit(extension_loaded("mbstring") ? 0 : 1);' || PHP_EXT="$PHP_EXT mbstring"; \
@@ -77,6 +71,7 @@ COPY php/docker-wait-pimcore.sh /usr/local/bin/wait_pimcore
 COPY php/docker-healthcheck.sh /usr/local/bin/health
 COPY php/docker-readiness.sh /usr/local/bin/readiness
 COPY php/docker-status.sh /usr/local/bin/status
+COPY php/generate-sbom.php /usr/local/bin/generate-sbom
 
 COPY fpm/php.ini /usr/local/etc/php/php.ini
 
@@ -88,6 +83,11 @@ RUN chmod +x /usr/local/bin/wait_db
 RUN chmod +x /usr/local/bin/wait_pimcore
 RUN chmod +x /usr/local/bin/health
 RUN chmod +x /usr/local/bin/status
+RUN chmod +x /usr/local/bin/generate-sbom
+
+# SBOM of what is installed outside apk (PHP, PECL extensions, PEAR, composer), so that Trivy
+# can detect and match it. Every image that adds PHP extensions on top runs generate-sbom again.
+RUN generate-sbom
 
 FROM cors_php AS cors_php_cli
 
