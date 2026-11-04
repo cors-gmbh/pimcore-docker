@@ -17,7 +17,7 @@ env:
   # both variants of one php/alpine combination are built together in one bake
   # run so they share layers; the variant is only a manifest axis
   VARIANTS: 'pimcore pimcore-slim'
-  NGINX_VERSIONS: '1.28 1.29'
+  NGINX_VERSIONS: '1.28 1.29 1.30 1.31'
   INCOMPATIBLE_MATRIX: >
     []
 

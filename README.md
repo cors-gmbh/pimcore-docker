@@ -39,7 +39,7 @@ We currently build the images for following Versions:
  - ***Alpine***: 3.23, 3.24
  - ***PHP***: 8.4, 8.5
  - ***Variants***: pimcore, pimcore-slim
- - ***Nginx***: 1.28, 1.29
+ - ***Nginx***: 1.28, 1.29, 1.30, 1.31
 
 ## Available Images
 
@@ -69,7 +69,7 @@ Images are named like:
 
 - ***pimcore***: ghcr.io/cors-gmbh/pimcore-docker/pimcore:8.4-alpine3.24-10.0-LATEST
 - ***pimcore-slim***: ghcr.io/cors-gmbh/pimcore-docker/pimcore-slim:8.4-alpine3.24-10.0-LATEST
-- ***nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.29-10.0-LATEST
+- ***nginx***: ghcr.io/cors-gmbh/pimcore-docker/nginx:1.30-10.0-LATEST
 
 Removed in 10.0: `php-fpm`, `php-cli`, `php-fpm-debug`, `php-supervisord` and `php-fpm-blackfire`. Replace them with
 `pimcore` and the command/environment from the table above.
