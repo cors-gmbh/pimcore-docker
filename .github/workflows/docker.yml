@@ -164,6 +164,8 @@ jobs:
 
   build_php_debug:
     needs: [ build_php, matrix ]
+    # also when single php builds failed; each build checks that its base image is from this run
+    if: ${{ !cancelled() && needs.matrix.result == 'success' }}
     uses: ./.github/workflows/docker-build.yml
     with:
       component: php_debug
@@ -173,6 +175,8 @@ jobs:
 
   build_php_blackfire:
     needs: [ build_php, matrix ]
+    # also when single php builds failed; each build checks that its base image is from this run
+    if: ${{ !cancelled() && needs.matrix.result == 'success' }}
     uses: ./.github/workflows/docker-build.yml
     with:
       component: php_blackfire
@@ -182,6 +186,8 @@ jobs:
 
   build_supervisord:
     needs: [ build_php, matrix ]
+    # also when single php builds failed; each build checks that its base image is from this run
+    if: ${{ !cancelled() && needs.matrix.result == 'success' }}
     uses: ./.github/workflows/docker-build.yml
     with:
       component: supervisord
