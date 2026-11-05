@@ -36,7 +36,7 @@ jobs:
       max-parallel: 4
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Login to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -169,7 +169,7 @@ jobs:
       - name: Generate Artifact Attestation
         id: attest
         continue-on-error: true
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ env.IMAGE_DIGEST }}
@@ -181,7 +181,7 @@ jobs:
 
       - name: Generate Artifact Attestation (retry)
         if: steps.attest.outcome == 'failure'
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ghcr.io/${{ github.repository }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ env.IMAGE_DIGEST }}
