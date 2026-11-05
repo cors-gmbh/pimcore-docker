@@ -1,0 +1,59 @@
+# Keeps the GitHub Actions pins of all release lines current.
+# Dependabot only reads this file from the default branch, so every line
+# branch gets its own entry with target-branch.
+#
+# Not covered on purpose:
+# - Docker base images: the FROM lines use ARG variables (php:${PHP_VERSION}-...,
+#   nginx:${NGINX_VERSION}-alpine), which Dependabot cannot resolve. The versions
+#   are maintained in the env lists of docker.yml.
+# - cors-gmbh/shared-workflows callers: pr-guardrail.yml is distributed by the
+#   file sync of shared-workflows and must not be changed locally.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: "10.0"
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "cors-gmbh/shared-workflows*"
+    labels: [dependencies]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: "9.0"
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "cors-gmbh/shared-workflows*"
+    labels: [dependencies]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: "8.0"
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "cors-gmbh/shared-workflows*"
+    labels: [dependencies]
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: "7.0"
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "cors-gmbh/shared-workflows*"
+    labels: [dependencies]
