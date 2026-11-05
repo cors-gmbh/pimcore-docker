@@ -1,0 +1,165 @@
+name: Upstream Lines
+
+# Weekly check of the nginx, PHP and Alpine lines that the line branches build (NGINX_VERSIONS, PHP_VERSIONS
+# and ALPINE_VERSIONS in their docker.yml) against Docker Hub. Rules: .github/scripts/upstream-lines.sh.
+#
+# - New upstream line: one PR per line branch from upstream-lines/<branch>, refreshed on every run and closed
+#   once it is no longer needed. A new nginx stable line goes to every line branch; a new nginx mainline, PHP
+#   or Alpine minor only to the newest line branch.
+# - Listed lines upstream no longer updates: one issue, updated when the list changes.
+#
+# The PRs are created with the CORS CD bot app token: PRs created with GITHUB_TOKEN never trigger workflows,
+# and the PR guardrail treats PRs of its own app as bot PRs. Schedules only run on the default branch, so
+# this workflow and its script only exist on 10.0.
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only report (job summary), open no PRs and no issue
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-lines
+  cancel-in-progress: false
+
+env:
+  # a tag upstream has not pushed for this long counts as frozen (if newer lines exist)
+  FROZEN_AFTER_DAYS: '30'
+  # line branches: <major>.0 with major >= MIN_LINE_MAJOR
+  MIN_LINE_MAJOR: '7'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      propose: ${{ steps.plan.outputs.propose }}
+    steps:
+      # all branches: the script reads docker.yml of every line branch from origin/<branch>
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Compare with Docker Hub
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: .github/scripts/upstream-lines.sh plan "$RUNNER_TEMP/plan.json"
+
+  propose:
+    needs: plan
+    if: needs.plan.outputs.propose != '[]' && inputs.dry_run != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        branch: ${{ fromJSON(needs.plan.outputs.propose) }}
+      fail-fast: false
+    steps:
+      - name: Checkout script
+        uses: actions/checkout@v6
+        with:
+          path: tools
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: Checkout ${{ matrix.branch }}
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.branch }}
+          path: line
+          persist-credentials: false
+
+      - name: Add the new lines
+        id: apply
+        env:
+          PLAN: ${{ needs.plan.outputs.plan }}
+          BRANCH: ${{ matrix.branch }}
+        run: |
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          tools/.github/scripts/upstream-lines.sh apply "$RUNNER_TEMP/plan.json" "$BRANCH" line "$RUNNER_TEMP/pr"
+          git -C line diff
+          {
+            echo "title=$(cat "$RUNNER_TEMP/pr/title.txt")"
+            echo "commit_message<<EOF_COMMIT_MESSAGE"
+            cat "$RUNNER_TEMP/pr/commit.txt"
+            echo "EOF_COMMIT_MESSAGE"
+          } >> "$GITHUB_OUTPUT"
+
+      # workflows: write because the PR changes .github/workflows/docker.yml
+      - name: App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+
+      # commits by the app's bot user, like its other PRs
+      - name: Bot identity
+        id: bot
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          id=$(gh api "/users/${SLUG}%5Bbot%5D" --jq .id)
+          echo "identity=${SLUG}[bot] <${id}+${SLUG}[bot]@users.noreply.github.com>" >> "$GITHUB_OUTPUT"
+
+      # creates or refreshes the PR from upstream-lines/<branch>; closes it and deletes the branch when there
+      # is no difference to the base any more
+      - name: Create / update PR
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          path: line
+          base: ${{ matrix.branch }}
+          branch: upstream-lines/${{ matrix.branch }}
+          delete-branch: true
+          add-paths: |
+            .github/workflows/docker.yml
+            README.md
+          author: ${{ steps.bot.outputs.identity }}
+          committer: ${{ steps.bot.outputs.identity }}
+          commit-message: ${{ steps.apply.outputs.commit_message }}
+          title: ${{ steps.apply.outputs.title }}
+          body-path: ${{ runner.temp }}/pr/body.md
+
+  frozen-issue:
+    needs: plan
+    if: inputs.dry_run != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout script
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: Open / update / close the issue
+        env:
+          PLAN: ${{ needs.plan.outputs.plan }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          printf '%s' "$PLAN" > "$RUNNER_TEMP/plan.json"
+          .github/scripts/upstream-lines.sh issue "$RUNNER_TEMP/plan.json"
