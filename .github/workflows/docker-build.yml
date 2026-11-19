@@ -77,8 +77,16 @@ jobs:
       - name: Check base image
         if: env.FROM_IMAGE != ''
         run: |
-          run_id=$(docker buildx imagetools inspect "$FROM_IMAGE" --format '{{json .Image.Config.Labels}}' \
-            | jq -r '.["gmbh.cors.pimcore-docker.run-id"] // empty' || true)
+          # ghcr answers reads with 403 denied or 429 while it throttles (several releases at once);
+          # retry before taking the image for one of an earlier run
+          labels=""
+          for attempt in 1 2 3 4; do
+            labels=$(docker buildx imagetools inspect "$FROM_IMAGE" --format '{{json .Image.Config.Labels}}') && break
+            labels=""
+            echo "Inspect of $FROM_IMAGE failed, retrying in $((attempt * 15))s (attempt ${attempt}/4)"
+            sleep $((attempt * 15))
+          done
+          run_id=$(echo "$labels" | jq -r '.["gmbh.cors.pimcore-docker.run-id"] // empty' || true)
           if [ "$run_id" != "$GITHUB_RUN_ID" ]; then
             echo "::error::$FROM_IMAGE was not built in this run (its build failed)"
             exit 1
@@ -231,8 +239,16 @@ jobs:
           # tags); otherwise this job fails, and "Re-run failed jobs" creates the manifest once
           # the missing build has succeeded
           for image in "$REGISTRY/amd-$IMAGE_NAME:$IMAGE_TAG" "$REGISTRY/arm-$IMAGE_NAME:$IMAGE_TAG"; do
-            run_id=$(docker buildx imagetools inspect "$image" --format '{{json .Image.Config.Labels}}' \
-              | jq -r '.["gmbh.cors.pimcore-docker.run-id"] // empty' || true)
+            # ghcr answers reads with 403 denied or 429 while it throttles (several releases at once);
+            # retry before taking the image for one of an earlier run
+            labels=""
+            for attempt in 1 2 3 4; do
+              labels=$(docker buildx imagetools inspect "$image" --format '{{json .Image.Config.Labels}}') && break
+              labels=""
+              echo "Inspect of $image failed, retrying in $((attempt * 15))s (attempt ${attempt}/4)"
+              sleep $((attempt * 15))
+            done
+            run_id=$(echo "$labels" | jq -r '.["gmbh.cors.pimcore-docker.run-id"] // empty' || true)
             if [ "$run_id" != "$GITHUB_RUN_ID" ]; then
               echo "::error::$image was not built in this run, $REGISTRY/$IMAGE_NAME:$IMAGE_TAG is not updated"
               exit 1
