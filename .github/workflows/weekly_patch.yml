@@ -39,6 +39,9 @@ jobs:
     strategy:
       matrix: ${{ fromJson(needs.get-branches.outputs.matrix) }}
       fail-fast: false
+      # one line after the other: several release builds at once push so much that ghcr
+      # throttles (429, 403 denied) and the manifests fail (#41)
+      max-parallel: 1
 
     steps:
       - name: Checkout Repository
@@ -96,5 +99,17 @@ jobs:
             gh release create ${{ env.new_tag }} \
               --title "Release ${{ env.new_tag }}" \
               --notes "Automated weekly patch release for branch ${{ matrix.branch }}."
-            gh workflow run docker.yml --ref ${{ env.new_tag }}
+            url=$(gh workflow run docker.yml --ref ${{ env.new_tag }})
+            echo "$url"
+            run_id=${url##*/}
+            if ! [[ "$run_id" =~ ^[0-9]+$ ]]; then
+              run_id=""
+              for _ in $(seq 1 20); do
+                run_id=$(gh run list --workflow docker.yml --branch ${{ env.new_tag }} --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+                [ -n "$run_id" ] && break
+                sleep 15
+              done
+            fi
+            # wait for the build, so the next line only starts afterwards (max-parallel above)
+            gh run watch "$run_id" --interval 60 --exit-status
           fi
