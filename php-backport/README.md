@@ -7,7 +7,7 @@ are frozen on vulnerable PHP versions. This directory rebuilds them ourselves.
 
 | Directory | PHP | Source |
 |---|---|---|
-| `8.1/alpine3.21/{fpm,cli}` | 8.1.34 + backport | last official docker-library 8.1.34 Dockerfiles ([`5c037abaf9`](https://github.com/docker-library/php/tree/5c037abaf9/8.1/alpine3.21)) plus the PHP security team's backport patch; the downloads of docker-library's own patches from github.com retry (it answers `.patch` URLs with 503 now and then) |
+| `8.1/alpine3.21/{fpm,cli}` | 8.1.34 + backport | last official docker-library 8.1.34 Dockerfiles ([`5c037abaf9`](https://github.com/docker-library/php/tree/5c037abaf9/8.1/alpine3.21)) plus the PHP security team's backport patch; docker-library's own patches (11678, 19131, 14834) are vendored as `php-src-<n>.patch`, because github.com answers `.patch` URLs with 503 now and then |
 | `8.2/alpine3.2{1,2}/{fpm,cli}` | 8.2.36 | official `8.2/alpine3.23` Dockerfiles of [`8f7cce4`](https://github.com/docker-library/php/tree/8f7cce4), `FROM alpine:3.21` / `3.22` |
 | `8.3/alpine3.2{1,2}/{fpm,cli}` | 8.3.37 | official `8.3/alpine3.23` Dockerfiles of `8f7cce4`, `FROM alpine:3.21` / `3.22` |
 | `8.4/alpine3.2{1,2}/{fpm,cli}` | 8.4.28 | official `8.4/alpine3.23` Dockerfiles of `8f7cce4`, `FROM alpine:3.21` / `3.22` |
