@@ -7,11 +7,11 @@ are frozen on vulnerable PHP versions. This directory rebuilds them ourselves.
 
 | Directory | PHP | Source |
 |---|---|---|
-| `8.1/alpine3.21/{fpm,cli}` | 8.1.34 + backport | last official docker-library 8.1.34 Dockerfiles ([`5c037abaf9`](https://github.com/docker-library/php/tree/5c037abaf9/8.1/alpine3.21)) plus the PHP security team's backport patch |
-| `8.2/alpine3.2{1,2}/{fpm,cli}` | 8.2.35 | official `8.2/alpine3.23` Dockerfiles of [`f6048b5f`](https://github.com/docker-library/php/tree/f6048b5f6e3c2202ee082665a4ccc0d90de291a3), `FROM alpine:3.21` / `3.22` |
-| `8.3/alpine3.2{1,2}/{fpm,cli}` | 8.3.36 | official `8.3/alpine3.23` Dockerfiles of `f6048b5f`, `FROM alpine:3.21` / `3.22` |
-| `8.4/alpine3.2{1,2}/{fpm,cli}` | 8.4.27 | official `8.4/alpine3.23` Dockerfiles of `f6048b5f`, `FROM alpine:3.21` / `3.22` |
-| `8.5/alpine3.2{1,2}/{fpm,cli}` | 8.5.12 | official `8.5/alpine3.23` Dockerfiles of `f6048b5f`, `FROM alpine:3.21` / `3.22` |
+| `8.1/alpine3.21/{fpm,cli}` | 8.1.34 + backport | last official docker-library 8.1.34 Dockerfiles ([`5c037abaf9`](https://github.com/docker-library/php/tree/5c037abaf9/8.1/alpine3.21)) plus the PHP security team's backport patch; docker-library's own patches (11678, 19131, 14834) are vendored as `php-src-<n>.patch`, because github.com answers `.patch` URLs with 503 now and then |
+| `8.2/alpine3.2{1,2}/{fpm,cli}` | 8.2.36 | official `8.2/alpine3.23` Dockerfiles of [`8f7cce4`](https://github.com/docker-library/php/tree/8f7cce4), `FROM alpine:3.21` / `3.22` |
+| `8.3/alpine3.2{1,2}/{fpm,cli}` | 8.3.37 | official `8.3/alpine3.23` Dockerfiles of `8f7cce4`, `FROM alpine:3.21` / `3.22` |
+| `8.4/alpine3.2{1,2}/{fpm,cli}` | 8.4.28 | official `8.4/alpine3.23` Dockerfiles of `8f7cce4`, `FROM alpine:3.21` / `3.22` |
+| `8.5/alpine3.2{1,2}/{fpm,cli}` | 8.5.13 | official `8.5/alpine3.23` Dockerfiles of `8f7cce4`, `FROM alpine:3.21` / `3.22` |
 
 For 8.2 to 8.5 the `FROM` line is the **only** change. docker-library generates the Alpine
 variants of a release from one template, and the official 3.23 and 3.24 Dockerfiles of
@@ -31,7 +31,7 @@ exactly the combinations in its `BACKPORT_COMBOS` list instead of the official `
 Check a running container:
 
 ```sh
-php -v                         # 8.1.34 / 8.2.35 / 8.3.36 / 8.4.27
+php -v                         # 8.1.34 / 8.2.36 / 8.3.37 / 8.4.28 / 8.5.13
 cat /etc/alpine-release        # unchanged Alpine version
 echo $PHP_SECURITY_BACKPORT    # 8.1 only: CVE-2026-109618 CVE-2026-109619 php-src@1d7dec178a09
 ```
