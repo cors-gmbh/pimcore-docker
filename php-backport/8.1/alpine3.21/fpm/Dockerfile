@@ -128,19 +128,19 @@ RUN set -eux; \
 	cd /usr/src/php; \
 # Apply patches; see https://github.com/docker-library/php/pull/1552
 	# https://github.com/php/php-src/issues/11678
-	curl -fL 'https://github.com/php/php-src/commit/577b8ae4226368e66fee7a9b5c58f9e2428372fc.patch?full_index=1' -o 11678.patch; \
+	curl -fL --retry 5 --retry-all-errors --retry-delay 5 'https://github.com/php/php-src/commit/577b8ae4226368e66fee7a9b5c58f9e2428372fc.patch?full_index=1' -o 11678.patch; \
 	echo '6edc20c3bb3e7cc13515abce7f2fffa8ebea6cf7469abfbc78fcdc120350b239 *11678.patch' | sha256sum -c -; \
 	patch -p1 < 11678.patch; \
 	rm 11678.patch; \
 	# https://github.com/php/php-src/pull/19131
 	# this backported commit broke our ability to apply 14834, which is the fix we need, so this is applied as a reverse patch to undo it
 	# 19131 was for FreeBSD, so doesn't apply to this alpine build
-	curl -fL 'https://github.com/php/php-src/commit/a5df26691d1b1f71b964b869510473a5d5413999.patch?full_index=1' -o 19131.patch; \
+	curl -fL --retry 5 --retry-all-errors --retry-delay 5 'https://github.com/php/php-src/commit/a5df26691d1b1f71b964b869510473a5d5413999.patch?full_index=1' -o 19131.patch; \
 	echo 'c98c01c74d3a6da197116f8511b16fed361ca6bbb6a8af8df629a933f541c213 *19131.patch' | sha256sum -c -; \
 	patch --reverse -p1 < 19131.patch; \
 	rm 19131.patch; \
 	# https://github.com/php/php-src/issues/14834
-	curl -fL 'https://github.com/php/php-src/commit/67259e451d5d58b4842776c5696a66d74e157609.patch?full_index=1' -o 14834.patch; \
+	curl -fL --retry 5 --retry-all-errors --retry-delay 5 'https://github.com/php/php-src/commit/67259e451d5d58b4842776c5696a66d74e157609.patch?full_index=1' -o 14834.patch; \
 	echo 'ed10a1b254091ad676ed204e55628ecbd6c8962004d6185a1821cedecd526c0f *14834.patch' | sha256sum -c -; \
 	filterdiff -x '*/NEWS' 14834.patch | patch -p1; \
 	rm 14834.patch; \
