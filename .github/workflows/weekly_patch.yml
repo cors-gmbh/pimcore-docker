@@ -110,6 +110,12 @@ jobs:
                 sleep 15
               done
             fi
+            # a run is not readable through the API for a few seconds after the dispatch; watching
+            # it at once fails with 404 and lets the next line start in parallel (#48)
+            for _ in $(seq 1 20); do
+              gh run view "$run_id" --json status >/dev/null 2>&1 && break
+              sleep 15
+            done
             # wait for the build, so the next line only starts afterwards (max-parallel above)
             gh run watch "$run_id" --interval 60 --exit-status
           fi
