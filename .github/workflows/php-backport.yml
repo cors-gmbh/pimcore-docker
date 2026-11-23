@@ -2,7 +2,8 @@ name: PHP Backport Build
 
 # Builds the PHP base images docker-library no longer publishes for the Alpine versions of
 # our older branches, from php-backport/<php>/alpine<alpine>/<type>/ (see php-backport/README.md):
-# - 8.1.34 + the PHP security team's backport for CVE-2026-109618 / CVE-2026-109619 (8.1 is EOL)
+# - 8.1.34 + the PHP security team's backport for CVE-2026-109618 / CVE-2026-109619 and our port of
+#   the fixes of the security release of 2026-11-19 (8.1 is EOL, there is no upstream 8.1 fix)
 # - 8.2.36 / 8.3.37 / 8.4.28 / 8.5.13, the fixed releases, on Alpine 3.21 and 3.22
 # Published as ghcr.io/<repo>/php-backport:<php>-<type>-alpine<alpine>; docker-build.yml uses
 # them as base (BACKPORT_COMBOS in docker-build.yml of 7.0 and 8.0).
@@ -70,6 +71,10 @@ jobs:
           if grep -q 'PHP_SECURITY_BACKPORT' "$DIR/Dockerfile"; then
             docker run --rm $IMG sh -c 'echo "PHP_SECURITY_BACKPORT=$PHP_SECURITY_BACKPORT"; test -n "$PHP_SECURITY_BACKPORT"'
           fi
+          # 8.1 only: the 2026-11-19 backport turns session.upload_progress off by default (GHSA-658j-r8rw-q6mx)
+          if grep -q 'php-src-CVE-2026-11-19.patch' "$DIR/Dockerfile"; then
+            test "$(docker run --rm $IMG php -r 'var_export(ini_get("session.upload_progress.enabled"));')" == "'0'"
+          fi
           if [ "${{ matrix.php_type }}" == "fpm" ]; then
             docker run --rm $IMG php-fpm -t
           fi
@@ -116,8 +121,9 @@ jobs:
           ALPINE_VERSION=${COMBO#*/}
           DIR=php-backport/$PHP_VERSION/alpine$ALPINE_VERSION/${{ matrix.php_type }}
           FULL=$(sed -n 's/^ENV PHP_VERSION //p' $DIR/Dockerfile)
-          # immutable tag; images with the 8.1 backport carry the CVE in it
-          if grep -q 'PHP_SECURITY_BACKPORT' "$DIR/Dockerfile"; then FULL="$FULL-cve-2026-109618"; fi
+          # immutable tag; images with an 8.1 backport carry the newest backport in it
+          if grep -q 'php-src-CVE-2026-11-19.patch' "$DIR/Dockerfile"; then FULL="$FULL-cve-2026-11-19"
+          elif grep -q 'PHP_SECURITY_BACKPORT' "$DIR/Dockerfile"; then FULL="$FULL-cve-2026-109618"; fi
 
           SOURCE=${{ env.IMAGE }}:$PHP_VERSION-${{ matrix.php_type }}-alpine$ALPINE_VERSION
 

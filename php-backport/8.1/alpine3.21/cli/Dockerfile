@@ -1,13 +1,18 @@
 #
-# PHP 8.1.34 with the PHP security team's backport for CVE-2026-109618 / CVE-2026-109619 ("php2shell").
+# PHP 8.1.34 with the PHP security team's backport for CVE-2026-109618 / CVE-2026-109619 ("php2shell")
+# and our backport of the fixes of the PHP security release of 2026-11-19.
 #
 # PHP 8.1 is end of life, so there is neither an upstream release nor an official Docker image with
-# this fix. This file is the last official docker-library/php Dockerfile for 8.1.34 on Alpine 3.21
+# these fixes. This file is the last official docker-library/php Dockerfile for 8.1.34 on Alpine 3.21
 # (https://github.com/docker-library/php/tree/5c037abaf9/8.1/alpine3.21), unchanged except for
-# the vendored backport patch and the PHP_SECURITY_BACKPORT marker below.
+# the vendored backport patches and the PHP_SECURITY_BACKPORT marker below.
 #
 # Backport: https://github.com/php/php-src/commit/1d7dec178a094e6e75b229ce22754045f8c6070a
 # (branch PHP-8.1-CVE-2026-109618-109619, on top of php-8.1.34)
+#
+# Second backport, our own: php-src-CVE-2026-11-19.patch ports the fixes of the PHP security release
+# of 2026-11-19 (8.2.36) to 8.1, cherry-picked from php-src branch PHP-8.2 on top of the backport
+# above (see php-backport/README.md for the list of commits and the adaptations for 8.1).
 #
 
 FROM alpine:3.21
@@ -66,7 +71,7 @@ ENV PHP_VERSION 8.1.34
 ENV PHP_URL="https://www.php.net/distributions/php-8.1.34.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.1.34.tar.xz.asc"
 ENV PHP_SHA256="ffa9e0982e82eeaea848f57687b425ed173aa278fe563001310ae2638db5c251"
 # php -v still reports 8.1.34; this marks images that carry the backport
-ENV PHP_SECURITY_BACKPORT="CVE-2026-109618 CVE-2026-109619 php-src@1d7dec178a09"
+ENV PHP_SECURITY_BACKPORT="CVE-2026-109618 CVE-2026-109619 php-src@1d7dec178a09 CVE-2026-129291 CVE-2026-127960 CVE-2026-128064 CVE-2026-115560 CVE-2026-126714 CVE-2026-129496 CVE-2026-129506 CVE-2026-129289 CVE-2026-6735 CVE-2026-129292 CVE-2026-129538 CVE-2026-128090 CVE-2026-15353 php-src-CVE-2026-11-19.patch"
 
 RUN set -eux; \
 	\
@@ -94,7 +99,7 @@ RUN set -eux; \
 
 COPY docker-php-source /usr/local/bin/
 # docker-library's own patches, vendored: github.com answers .patch URLs with 503 now and then
-COPY php-src-11678.patch php-src-19131.patch php-src-14834.patch php-src-CVE-2026-109618-109619.patch /usr/src/
+COPY php-src-11678.patch php-src-19131.patch php-src-14834.patch php-src-CVE-2026-109618-109619.patch php-src-CVE-2026-11-19.patch /usr/src/
 
 RUN set -eux; \
 	apk add --no-cache --virtual .build-deps \
@@ -142,6 +147,9 @@ RUN set -eux; \
 	# CVE-2026-109618 / CVE-2026-109619, see the header of this file
 	echo '1bbab46e66bc7cf5f0fa2ac18537b1abc8c9c04d7b2469c02682c60ccc07f239 */usr/src/php-src-CVE-2026-109618-109619.patch' | sha256sum -c -; \
 	patch -p1 < /usr/src/php-src-CVE-2026-109618-109619.patch; \
+	# security release of 2026-11-19 ported to 8.1, see the header of this file
+	echo '3a5e68f6a9d95a3051bb2b4cd0b91a3a0747c3e4bcf06417af48c06b9eb4c0fb */usr/src/php-src-CVE-2026-11-19.patch' | sha256sum -c -; \
+	patch -p1 < /usr/src/php-src-CVE-2026-11-19.patch; \
 	gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)"; \
 	./configure \
 		--build="$gnuArch" \
